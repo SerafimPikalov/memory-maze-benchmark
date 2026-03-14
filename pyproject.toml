@@ -1,0 +1,33 @@
+[project]
+name = "memory-maze-benchmark"
+version = "0.1.0"
+description = "Training and benchmarking RL agents on Memory Maze with MuJoCo and Genesis backends"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+requires-python = ">=3.10"
+authors = [{name = "Serafim Pikalov", email = "serafim.pikalov@gmail.com"}]
+dependencies = [
+    "torch>=2.0",
+    "numpy>=1.24",
+    "gym>=0.21,<1.0",
+    "dm_control>=1.0",
+    "wandb",
+]
+
+[project.optional-dependencies]
+genesis = [
+    "memory-maze[genesis] @ git+https://github.com/SerafimPikalov/memory-maze.git@genesis",
+]
+notebooks = [
+    "matplotlib",
+    "pandas",
+    "seaborn",
+    "ipywidgets>=8.0",
+    "jupyter",
+    "imageio[ffmpeg]",
+]
+dev = ["pytest", "ruff"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"

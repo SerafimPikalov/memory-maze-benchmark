@@ -1,0 +1,6 @@
+matplotlib
+pandas
+seaborn
+ipywidgets>=8.0
+jupyter
+imageio[ffmpeg]
