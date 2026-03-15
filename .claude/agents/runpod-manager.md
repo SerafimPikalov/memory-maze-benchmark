@@ -42,7 +42,20 @@ Ask: **"What do you want to do on the pod?"**
 - **Smoke test** — quick validation that everything works
 - **Dev** — interactive SSH development
 
-### Step 3: Confirm configuration
+### Step 3: Testing preference
+Ask: **"Want to run tests first?"** and recommend based on intent:
+- **First time using this pod/image** → recommend: "I'd suggest running the smoke test first (`python /app/smoke_test.py`) to verify CUDA, EGL, and backends work. Takes ~60s and can save hours of debugging."
+- **Training run** → recommend: "Want me to run a quick 100-step smoke training before the full run? Catches EGL/rendering issues early."
+- **Returning user, same image** → "You've used this image before, probably safe to skip tests."
+
+Available tests (all optional, user decides):
+- `python /app/smoke_test.py` — validates CUDA, EGL, MuJoCo, Genesis, BatchRenderer (~60s)
+- `pytest tests/test_smoke.py` — import checks (~2s)
+- `pytest tests/test_environment.py` — env creation + stepping (~10s)
+- `pytest tests/test_training.py` — model forward pass + short training (~30s)
+- `pytest tests/test_training.py -m slow` — 100-step actual training run (~60s)
+
+### Step 4: Confirm configuration
 Run `python runpod/pod_manager.py recommend --workload <type>` to show the config. Then ask: "This will cost ~$X/hr. Create it?"
 
 Only after explicit "yes" should you run `create`.
@@ -59,6 +72,7 @@ Agent: I'll help set up a GPU pod. A few questions first:
    - Quick smoke test
    - Interactive development
 3. Do you want W&B logging? If so, I'll need your WANDB_API_KEY.
+4. Want to run tests first? (recommended for first-time setup)
 ```
 
 ## Prerequisites
