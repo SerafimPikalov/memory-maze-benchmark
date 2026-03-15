@@ -87,7 +87,7 @@ RUN GS_DIR=$(pip show gs-madrona 2>/dev/null | grep ^Location | cut -d' ' -f2)/g
 WORKDIR /app
 
 # Training and benchmark scripts
-COPY train_impala.py benchmark_physics.py ./
+COPY train_impala.py benchmark_physics.py benchmark_backends.py ./
 
 # TorchBeast pure-Python core modules (vendored as proper package)
 COPY torchbeast/ torchbeast/
