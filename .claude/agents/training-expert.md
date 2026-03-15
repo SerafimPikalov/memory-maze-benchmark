@@ -56,3 +56,15 @@ ResNet encoder (3 blocks: 16→32→32, spatial 64→32→16→8) + FC(2048→25
 | Genesis batched, dt=0.05 (RunPod) | 840 | 3×32 envs on L40 |
 
 Physics timestep dt=0.05 gives ~10x speedup (50→5 substeps) with stable dynamics.
+
+## Test Suite
+
+Three test files in `tests/`, run with `make test` (fast) or `make test-all` (with integration):
+
+| File | Tests | What it covers |
+|------|-------|---------------|
+| `test_smoke.py` | 11 | Imports, model instantiation, component shapes (LSTM, CNN, heads) |
+| `test_environment.py` | 15 | MuJoCo env creation, obs/action spaces, MemoryMazeWrapper (HWC→CHW), TorchBeast Environment wrapper |
+| `test_training.py` | 16+1 | Forward pass shapes, LSTM state reset on done, loss functions (baseline, entropy, PG), V-trace computation, `learn()` function, weight updates. 1 slow integration test (200-step real training run) |
+
+Markers: `@pytest.mark.slow` (real training), `@pytest.mark.genesis` (needs Genesis), `@pytest.mark.gpu` (needs CUDA)

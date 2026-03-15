@@ -36,8 +36,8 @@ Ask the user: "Do you have a local NVIDIA GPU, or should we use cloud (RunPod)? 
 pip install -r requirements.txt
 
 # Run tests
-make test           # all tests (~30s)
-make test-fast      # skip slow tests (~10s)
+make test           # smoke + environment + training unit tests (~30s)
+make test-all       # includes slow 200-step integration test (~60s)
 
 # Train IMPALA (MuJoCo)
 python train_impala.py --num_actors 8 --total_steps 10_000_000
