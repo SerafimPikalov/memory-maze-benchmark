@@ -98,6 +98,10 @@ COPY notebooks/ notebooks/
 # Docker support scripts
 COPY docker/smoke_test.py docker/run_training.sh ./
 
+# Tests and Makefile (for `make test` inside container)
+COPY tests/ tests/
+COPY Makefile pyproject.toml ./
+
 # Memory Maze with Genesis backend (from fork)
 RUN pip install --no-cache-dir "memory-maze[genesis] @ git+https://github.com/SerafimPikalov/memory-maze.git@genesis"
 
