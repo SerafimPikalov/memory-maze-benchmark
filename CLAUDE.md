@@ -54,7 +54,8 @@ python train_impala.py --mode test --xpid <experiment_id>
 | File | Description |
 |------|-------------|
 | `train_impala.py` | IMPALA V-trace training (3 regimes: MuJoCo, Genesis single, Genesis batched) |
-| `benchmark_physics.py` | Physics preset benchmark |
+| `benchmark_physics.py` | MuJoCo physics preset benchmark (timestep, iterations) |
+| `benchmark_backends.py` | MuJoCo vs Genesis comparison (SPS at different parallelism levels) |
 | `ARCHITECTURE.md` | Process/thread diagrams |
 | `torchbeast/` | Vendored TorchBeast modules (Apache 2.0) |
 | `runpod/pod_manager.py` | One-command GPU pod deployment |

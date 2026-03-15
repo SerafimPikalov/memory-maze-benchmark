@@ -36,8 +36,11 @@ train:  ## Train IMPALA on 9x9 maze (default settings)
 train-genesis:  ## Train IMPALA with Genesis batched mode (GPU)
 	python train_impala.py --backend genesis --batched --physics_timestep 0.05 --total_steps 10_000_000
 
-benchmark:  ## Run physics preset benchmark
+benchmark:  ## Run MuJoCo physics preset benchmark
 	python benchmark_physics.py --episodes 10
+
+benchmark-backends:  ## Compare MuJoCo vs Genesis throughput
+	python benchmark_backends.py --backends mujoco,genesis-batched --actors 1,4,8 --steps 4000
 
 lint:  ## Check code style
 	ruff check .
@@ -46,4 +49,4 @@ lint:  ## Check code style
 clean:  ## Remove generated artifacts
 	rm -rf logs/ checkpoints/ recordings/ __pycache__/ wandb/ .pytest_cache/
 
-.PHONY: help install install-notebooks install-dev test test-all train-smoke train train-genesis benchmark lint clean
+.PHONY: help install install-notebooks install-dev test test-all train-smoke train train-genesis benchmark benchmark-backends lint clean
