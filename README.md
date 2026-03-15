@@ -7,16 +7,22 @@ Training and benchmarking RL agents on [Memory Maze](https://arxiv.org/abs/2210.
 - **Physics is the bottleneck** (74-89% of step time), not rendering (~3ms regardless of backend)
 - **Genesis `dt=0.05` gives 10x physics speedup** (460ms -> 49ms per step) with stable walker dynamics
 - **IMPALA + LSTM** achieves mean return 9-12 at 23M steps (vs paper's 17-18)
-- **IMPALA (V-trace) training** with three regimes: MuJoCo, Genesis single-env, and Genesis batched
+- **IMPALA (V-trace) training** with four regimes: MuJoCo, Genesis single-env, Genesis batched (single-process), and Genesis batched (multi-process)
 
 See [docs/bottleneck_analysis.md](docs/bottleneck_analysis.md) and [docs/physics_timestep_optimization.md](docs/physics_timestep_optimization.md) for the full data.
+
+## Prerequisites
+
+- Python >= 3.10
+- MuJoCo backend: works on macOS (glfw) and Linux (EGL + NVIDIA GPU)
+- Genesis backend: Linux + NVIDIA GPU (CUDA 12.x), >= 16 GB VRAM for batched mode
+- Genesis depends on a [fork of memory-maze](https://github.com/SerafimPikalov/memory-maze/tree/genesis) that adds the Genesis backend. The fork is not merged upstream because the Genesis backend is experimental and requires additional dependencies (`genesis-world`, `gs-madrona`).
 
 ## Quick Start
 
 ```bash
 # Install core dependencies
 pip install -r requirements.txt
-pip install "memory-maze[genesis] @ git+https://github.com/SerafimPikalov/memory-maze.git@genesis"
 
 # Smoke test
 make smoke-test
@@ -32,7 +38,7 @@ python train_impala.py --backend genesis --batched --physics_timestep 0.05 --tot
 
 ### IMPALA (V-trace)
 
-Three training regimes:
+Four training regimes:
 
 ```bash
 # 1. MuJoCo (default) — N separate actor processes
@@ -41,8 +47,11 @@ python train_impala.py --num_actors 8 --total_steps 10_000_000
 # 2. Genesis single-env — N separate actor processes, Genesis physics
 python train_impala.py --backend genesis --num_actors 8 --total_steps 10_000_000
 
-# 3. Genesis batched (fastest) — single process, GPU physics + BatchRenderer
+# 3. Genesis batched (single-process) — main thread actor, GPU physics + BatchRenderer
 python train_impala.py --backend genesis --batched --physics_timestep 0.05 --total_steps 10_000_000
+
+# 4. Genesis batched (multi-process) — K actor processes, each with N/K batched envs
+python train_impala.py --backend genesis --batched --n_batched_actors 4 --physics_timestep 0.05 --total_steps 10_000_000
 
 # Evaluate trained agent
 python train_impala.py --mode test --xpid <experiment_id>
@@ -55,7 +64,7 @@ python train_impala.py --wandb --wandb_project memory-maze --total_steps 10_000_
 
 IMPALA uses a ResNet encoder (3 blocks: 64->32->16->8 spatial) + LSTM(256) for recurrent memory, with 6 discrete actions and V-trace importance sampling.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed process/thread diagrams of all three training regimes.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed process/thread diagrams of all four training regimes.
 
 ## Notebooks
 
@@ -123,7 +132,7 @@ See `python runpod/pod_manager.py --help` for all commands.
 
 ```
 .
-├── train_impala.py          # IMPALA V-trace training (3 regimes)
+├── train_impala.py          # IMPALA V-trace training (4 regimes)
 ├── benchmark_physics.py     # Physics preset benchmark
 ├── ARCHITECTURE.md          # Process/thread diagrams
 ├── torchbeast/              # Vendored pure-Python V-trace modules (Apache 2.0)
@@ -137,6 +146,14 @@ See `python runpod/pod_manager.py --help` for all commands.
 │   └── genesis_training_report.md
 └── tests/                   # Smoke tests
 ```
+
+## Known Limitations
+
+- **Lighting model differs**: MuJoCo uses a camera-following headlight; Genesis uses fixed directional lights with high ambient. This affects visual appearance but training still converges.
+- **Hidden target selection**: Rarely, a target that was hidden underground can be selected as the active target, creating an unwinnable episode. This is a known edge case in the Genesis backend.
+- **Training results gap**: Our best Genesis IMPALA run reached mean return 9-12 at 23M steps (MuJoCo backend, default hyperparameters) vs the paper's 17-18 at 100M steps. The gap is expected — we trained for fewer steps and used a single seed. The paper's results required 100M+ steps with tuned hyperparameters.
+- **Genesis/Taichi GPU memory**: Genesis does not fully free GPU memory when environments are destroyed. Long sessions with many env create/destroy cycles may require a process restart.
+- **gs-madrona source build**: The BatchRenderer requires `gs-madrona` built from source with a uint8 clamp fix. The stock PyPI package has a color corruption bug.
 
 ## Related
 
