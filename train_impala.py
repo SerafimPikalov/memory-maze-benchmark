@@ -40,7 +40,12 @@ import traceback
 import typing
 
 os.environ["OMP_NUM_THREADS"] = "1"
-os.environ.setdefault("MUJOCO_GL", "glfw")
+# macOS needs glfw; headless Linux needs egl
+if sys.platform == "darwin":
+    os.environ.setdefault("MUJOCO_GL", "glfw")
+else:
+    os.environ.setdefault("MUJOCO_GL", "egl")
+    os.environ.setdefault("PYOPENGL_PLATFORM", "egl")
 os.environ.setdefault("OBJC_DISABLE_INITIALIZE_FORK_SAFETY", "YES")
 # Prevent matplotlib (imported by Genesis) from initializing Tk in spawned
 # subprocesses — Tk requires macOS main thread and crashes in child processes.
