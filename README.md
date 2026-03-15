@@ -69,10 +69,10 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed process/thread diagrams of a
 
 ## Docker (GPU)
 
-Pre-built image with CUDA, EGL, Genesis, and Madrona BatchRenderer:
+Build from source recommended — the Docker Hub image (`serapikalov/memorymaze-train`) may be behind the repo.
 
 ```bash
-# Build
+# Build from source (recommended)
 docker build -f docker/Dockerfile -t mmaze .
 
 # Smoke test — validates CUDA, EGL, MuJoCo, Genesis (~60s)
