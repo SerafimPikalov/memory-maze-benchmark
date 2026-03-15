@@ -121,6 +121,7 @@ ENV WANDB_SILENT=true
 # Image version — agents check this to detect stale images.
 ENV MEMORYMAZE_IMAGE_VERSION=2
 
-# Interactive shell by default. On RunPod, /start.sh takes over (SSH + Jupyter).
-# To train: docker run --gpus all image python train_impala.py --num_actors 8
-CMD ["bash"]
+# /start.sh is the RunPod base image entrypoint (starts SSH + Jupyter).
+# For plain Docker: docker run --gpus all -it image bash
+# For RunPod: /start.sh runs automatically, keeping the container alive.
+CMD ["/start.sh"]
