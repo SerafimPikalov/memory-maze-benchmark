@@ -1,5 +1,13 @@
 .DEFAULT_GOAL := help
 
+# Detect platform for MuJoCo rendering backend
+UNAME := $(shell uname -s)
+ifeq ($(UNAME),Darwin)
+  export MUJOCO_GL ?= glfw
+else
+  export MUJOCO_GL ?= egl
+endif
+
 help:  ## Show available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -17,10 +25,10 @@ smoke-test:  ## Quick sanity check (no GPU needed)
 	python -c "from train_dreamer import DreamerModel; print('DreamerV2 model OK')"
 
 train-smoke-impala:  ## Short IMPALA training run (~2 min)
-	MUJOCO_GL=egl python train_impala.py --num_actors 2 --total_steps 1000 --batch_size 2
+	python train_impala.py --num_actors 2 --total_steps 1000 --batch_size 2
 
 train-smoke-dreamer:  ## Short DreamerV2 training run (~2 min)
-	MUJOCO_GL=egl python train_dreamer.py --num_envs 2 --total_steps 2000 --batch_size 2 --sequence_length 8
+	python train_dreamer.py --num_envs 2 --total_steps 2000 --batch_size 2 --sequence_length 8
 
 train:  ## Train IMPALA on 9x9 maze (default settings)
 	python train_impala.py --num_actors 8 --total_steps 10_000_000
