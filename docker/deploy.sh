@@ -2,23 +2,28 @@
 # Build and push the Memory Maze training Docker image.
 #
 # Usage:
-#   ./docker/deploy.sh                          # build + push
-#   ./docker/deploy.sh --build-only             # build without pushing
-#   DOCKER_REPO=myuser/myimage ./docker/deploy.sh  # custom repo
+#   ./docker/deploy.sh                                # build only (no DOCKER_REPO set)
+#   ./docker/deploy.sh --build-only                   # build without pushing
+#   DOCKER_REPO=myuser/myimage ./docker/deploy.sh     # build + push to your repo
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 
-DOCKER_REPO="${DOCKER_REPO:-serapikalov/memorymaze-train}"
-TAG="${TAG:-latest}"
-IMAGE="${DOCKER_REPO}:${TAG}"
-
 BUILD_ONLY=0
 if [ "${1:-}" = "--build-only" ]; then
     BUILD_ONLY=1
 fi
+
+if [ -z "${DOCKER_REPO:-}" ]; then
+    echo "DOCKER_REPO not set — building locally as 'memorymaze-train' (no push)."
+    DOCKER_REPO="memorymaze-train"
+    BUILD_ONLY=1
+fi
+
+TAG="${TAG:-latest}"
+IMAGE="${DOCKER_REPO}:${TAG}"
 
 echo "============================================================"
 echo "Building Docker image"
