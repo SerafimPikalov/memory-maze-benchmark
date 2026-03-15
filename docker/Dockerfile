@@ -60,7 +60,9 @@ RUN pip install --no-cache-dir \
     matplotlib \
     pandas \
     "ipywidgets>=8.0" \
-    seaborn
+    seaborn \
+    pytest \
+    ruff
 
 # -- Patch gs_madrona HLSL shader (uint8 clamp fix) --------------------
 # Stock gs-madrona has a uint8 overflow bug in linearToSRGB8(): when
