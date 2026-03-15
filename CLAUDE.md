@@ -26,6 +26,13 @@ docker run --gpus all -p 8888:8888 mmaze jupyter lab --ip=0.0.0.0 --allow-root -
 ### Path C: Cloud GPU (RunPod)
 Use the **runpod-manager** agent — it will ask what the user wants to do, gather credentials, and create the pod. Invoke with: "set up a runpod" or "create a GPU pod".
 
+### Docker image rebuild
+The Docker Hub image may be stale. If bugs appear that are already fixed in the repo, rebuild:
+```bash
+./docker/deploy.sh                                    # build locally
+DOCKER_REPO=youruser/image ./docker/deploy.sh          # build + push to your Docker Hub
+```
+
 ### When unsure which path
 Ask the user: "Do you have a local NVIDIA GPU, or should we use cloud (RunPod)? Or just explore locally without GPU?"
 

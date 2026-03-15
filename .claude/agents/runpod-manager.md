@@ -183,6 +183,24 @@ python /app/smoke_test.py
 - Prefer spot instances for non-interactive workloads
 - Warn the user about estimated hourly cost before creating — always get live pricing from `python runpod/pod_manager.py recommend` or `gpus`, never hardcode prices
 
+## Docker Image
+
+The Docker Hub image (`serapikalov/memorymaze-train:latest`) may be behind the repo. If the user hits unexpected bugs (e.g., MUJOCO_GL errors, missing files), suggest rebuilding:
+
+```bash
+# Build from source (recommended)
+./docker/deploy.sh                                    # builds locally as 'memorymaze-train'
+DOCKER_REPO=youruser/image ./docker/deploy.sh          # builds and pushes to your Docker Hub
+./docker/deploy.sh --build-only                        # explicit build-only
+```
+
+**When to recommend rebuilding:**
+- User hits env var bugs (MUJOCO_GL, PYOPENGL_PLATFORM) that were already fixed in the repo
+- Smoke test fails on something that works locally
+- New features/fixes were pushed to the repo but the image hasn't been updated
+
+**Never push to `serapikalov/memorymaze-train` unless the user explicitly owns that account.** The deploy script requires `DOCKER_REPO` to be set for pushing — without it, it only builds locally.
+
 ## GPU Selection Strategy
 
 Professional GPUs (RTX A5000, A4500, A4000) are preferred over consumer (RTX 4090, 3090) because some consumer GPU hosts have incomplete NVIDIA Vulkan library mounts needed for BatchRenderer.
