@@ -36,6 +36,22 @@ python train_impala.py --mode test --xpid <experiment_id>
 | `benchmark_physics.py` | Physics preset benchmark |
 | `ARCHITECTURE.md` | Process/thread diagrams |
 | `torchbeast/` | Vendored TorchBeast modules (Apache 2.0) |
+| `runpod/pod_manager.py` | One-command GPU pod deployment |
+
+## Notebooks
+
+6 guided Jupyter notebooks in `notebooks/` — the main way to explore the project interactively:
+
+| # | Notebook | What it does |
+|---|----------|-------------|
+| 1 | `01_environment_tour` | Create environments, inspect obs/actions, render frames |
+| 2 | `02_train_and_plot` | Launch training, plot learning curves |
+| 3 | `03_evaluate_and_record` | Load checkpoint, evaluate, record video |
+| 4 | `04_compare_algorithms` | IMPALA vs DreamerV2 comparison |
+| 5 | `05_engine_comparison` | MuJoCo vs Genesis side-by-side |
+| 6 | `06_model_playground` | Inspect model internals, visualize features |
+
+Run with: `cd notebooks && jupyter lab`
 
 ## RunPod GPU Deployment
 
