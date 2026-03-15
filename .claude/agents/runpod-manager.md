@@ -138,14 +138,11 @@ The image `serapikalov/memorymaze-train:latest` contains everything pre-installe
 - `MUJOCO_GL=egl` is pre-set (headless GPU rendering)
 - Genesis JIT compilation takes 2-5 min on first run
 
-**Stale image detection:** If you SSH into a pod and see ANY of these files, the image is OLD and needs rebuilding:
-- `eval_batched.py` — removed in DreamerV2 cleanup
-- `evaluate_agent.py` — removed
-- `benchmark_profiling.py` — removed
-- `train_dreamer.py` — removed
-- `runpod/smoke_test.py` — moved to `/app/smoke_test.py`
-
-If stale, tell the user: "This pod is running an old Docker image. Rebuild with `./docker/deploy.sh` and push, or set env vars manually: `export MUJOCO_GL=egl PYOPENGL_PLATFORM=egl`"
+**Stale image detection:** The image has `MEMORYMAZE_IMAGE_VERSION` env var. Check with:
+```bash
+echo $MEMORYMAZE_IMAGE_VERSION
+```
+Current version: **2**. If missing or lower, the image is stale. Tell the user: "This pod is running an old Docker image (version X, current is 2). Rebuild with `./docker/deploy.sh` and push to your Docker Hub."
 
 ## Post-Creation Guidance
 

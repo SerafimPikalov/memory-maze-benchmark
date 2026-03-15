@@ -114,6 +114,9 @@ ENV BACKEND=mujoco
 ENV MAZE_SIZE=9x9
 ENV WANDB_SILENT=true
 
+# Image version — agents check this to detect stale images.
+ENV MEMORYMAZE_IMAGE_VERSION=2
+
 # Interactive shell by default. On RunPod, /start.sh takes over (SSH + Jupyter).
 # To train: docker run --gpus all image python train_impala.py --num_actors 8
 CMD ["bash"]
