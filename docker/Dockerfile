@@ -120,8 +120,11 @@ ENV BACKEND=mujoco
 ENV MAZE_SIZE=9x9
 ENV WANDB_SILENT=true
 
+# Raise file descriptor limit for IMPALA multi-actor training
+RUN echo "* soft nofile 65536\n* hard nofile 65536" >> /etc/security/limits.conf
+
 # Image version — agents check this to detect stale images.
-ENV MEMORYMAZE_IMAGE_VERSION=3
+ENV MEMORYMAZE_IMAGE_VERSION=4
 
 # /start.sh is the RunPod base image entrypoint (starts SSH + Jupyter).
 # For plain Docker: docker run --gpus all -it image bash

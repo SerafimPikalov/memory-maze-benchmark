@@ -151,7 +151,7 @@ The Dockerfile copies `docker/smoke_test.py` and `docker/run_training.sh` to `/a
 ```bash
 echo $MEMORYMAZE_IMAGE_VERSION
 ```
-Current version: **3**. If missing or lower, the image is stale. Tell the user: "This pod is running an old Docker image (version X, current is 2). Rebuild with `./docker/deploy.sh` and push to your Docker Hub."
+Current version: **4**. If missing or lower, the image is stale. Tell the user: "This pod is running an old Docker image (version X, current is 2). Rebuild with `./docker/deploy.sh` and push to your Docker Hub."
 
 ## Post-Creation: ALWAYS Run Smoke Test First
 

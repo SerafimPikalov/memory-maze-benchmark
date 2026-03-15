@@ -22,6 +22,9 @@
 
 set -euo pipefail
 
+# Raise file descriptor limit — IMPALA with many actors needs >1024
+ulimit -n 65536 2>/dev/null || true
+
 # Defaults
 BACKEND="${BACKEND:-mujoco}"
 BATCHED="${BATCHED:-}"
