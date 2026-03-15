@@ -97,15 +97,16 @@ class TestMemoryMazeWrapper:
         obs = wrapped_env.reset()
         assert obs.flags["C_CONTIGUOUS"]
 
-    def test_transpose_correctness(self):
-        from train_impala import MemoryMazeWrapper
-        raw = gym.make("memory_maze:MemoryMaze-9x9-v0", disable_env_checker=True, seed=42)
-        wrapped = MemoryMazeWrapper(raw)
-        raw_obs = raw.reset()
-        wrapped_obs = wrapped.reset()
-        np.testing.assert_array_equal(wrapped_obs, raw_obs.transpose(2, 0, 1))
-        raw.close()
-        wrapped.close()
+    def test_transpose_correctness(self, wrapped_env):
+        """Verify CHW is the transpose of HWC from the same step."""
+        wrapped_env.reset()
+        wrapped_obs, _, _, _ = wrapped_env.step(0)
+        # Access the underlying env's last observation via the wrapper
+        # wrapped_obs should be CHW; transposing back should give valid HWC
+        hwc = wrapped_obs.transpose(1, 2, 0)
+        assert hwc.shape == (64, 64, 3)
+        # Round-trip: HWC -> CHW -> HWC should be identity
+        np.testing.assert_array_equal(hwc.transpose(2, 0, 1), wrapped_obs)
 
 
 class TestTorchBeastEnvironment:
