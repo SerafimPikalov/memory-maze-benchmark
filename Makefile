@@ -40,7 +40,7 @@ benchmark:  ## Run MuJoCo physics preset benchmark
 	python benchmark_physics.py --episodes 10
 
 benchmark-backends:  ## Compare MuJoCo vs Genesis throughput
-	python benchmark_backends.py --backends mujoco,genesis-batched --actors 1,4,8 --steps 4000
+	python benchmark_backends.py --backends mujoco,genesis-batched --actors 1,4,8,32 --steps 4000
 
 lint:  ## Check code style
 	ruff check .

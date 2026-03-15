@@ -205,8 +205,8 @@ def main():
     )
     parser.add_argument("--backends", default="mujoco,genesis-batched",
                         help="Comma-separated: mujoco, genesis, genesis-batched (default: mujoco,genesis-batched)")
-    parser.add_argument("--actors", default="1,4,8",
-                        help="Comma-separated actor/env counts (default: 1,4,8)")
+    parser.add_argument("--actors", default="1,4,8,32",
+                        help="Comma-separated actor/env counts (default: 1,4,8,32)")
     parser.add_argument("--steps", default=4000, type=int,
                         help="Total steps per benchmark (default: 4000)")
     parser.add_argument("--maze-size", default="9x9")
