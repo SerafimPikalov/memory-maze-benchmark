@@ -35,3 +35,6 @@ Thumbs.db
 # W&B
 wandb/
 
+# RunPod pod registry (contains API keys, SSH keys, pod IDs)
+runpod/pod_registry.json
+

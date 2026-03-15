@@ -1,0 +1,17 @@
+.git/
+__pycache__/
+*.egg-info/
+logs/
+checkpoints/
+recordings/
+wandb/
+.venv/
+venv/
+.idea/
+.vscode/
+runpod/pod_registry.json
+.claude/
+*.md
+!notebooks/README.md
+!docker/README.md
+!torchbeast/README.md
