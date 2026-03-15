@@ -15,7 +15,7 @@ import numpy as np
 DEFAULT_LOGDIR = os.path.expanduser("~/logs/torchbeast")
 
 
-# --- Log Loading -------------------------------------------------------------
+# ─── Log Loading ─────────────────────────────────────────────────────
 
 def load_training_logs(xpid, logdir=DEFAULT_LOGDIR):
     """Load logs.csv from a training run into a list of dicts.
@@ -34,7 +34,7 @@ def load_training_logs(xpid, logdir=DEFAULT_LOGDIR):
 
     rows = []
     with open(logs_path, "r") as f:
-        # The header line starts with "# " -- strip the prefix but keep it.
+        # The header line starts with "# " — strip the prefix but keep it.
         # Skip any other comment lines.
         lines = []
         for line in f:
@@ -102,7 +102,7 @@ def smooth(values, window=50):
     return np.convolve(values, kernel, mode="same")
 
 
-# --- Plotting -----------------------------------------------------------------
+# ─── Plotting ────────────────────────────────────────────────────────
 
 def plot_learning_curve(steps, values, label=None, color=None, smooth_window=50,
                         ax=None, xlabel="Environment Steps", ylabel="Episode Return",
@@ -182,7 +182,7 @@ def plot_loss_components(rows, loss_keys=None, ax=None, smooth_window=50):
     return ax
 
 
-# --- Rendering ----------------------------------------------------------------
+# ─── Rendering ───────────────────────────────────────────────────────
 
 def render_frame(env, action=None):
     """Take one step and return the rendered frame as HWC uint8 array.
@@ -230,7 +230,7 @@ def display_frame(frame, ax=None, title=None):
     return ax
 
 
-# --- Video Recording ---------------------------------------------------------
+# ─── Video Recording ────────────────────────────────────────────────
 
 def record_episode(env, policy_fn=None, max_steps=1000, fps=10):
     """Record a single episode as a list of frames.
@@ -306,7 +306,7 @@ def display_video_in_notebook(path):
     display(Video(path, embed=True, html_attributes="loop autoplay muted"))
 
 
-# --- Engine Comparison --------------------------------------------------------
+# ─── Engine Comparison ───────────────────────────────────────────────
 
 def compare_backends(seed=42, n_steps=100, env_id_mujoco="memory_maze:MemoryMaze-9x9-v0",
                      env_id_genesis="memory_maze:MemoryMaze-9x9-Genesis-v0"):
