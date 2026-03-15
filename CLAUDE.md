@@ -92,10 +92,20 @@ python runpod/pod_manager.py list                                          # che
 python runpod/pod_manager.py terminate <pod_id>                            # cleanup
 ```
 
+## Skills (slash commands)
+
+| Command | What it does |
+|---------|-------------|
+| `/setup` | Install deps, run tests, verify project works |
+| `/test` | Run test suite, report results |
+| `/benchmark` | MuJoCo vs Genesis SPS comparison |
+| `/deploy` | Build Docker image (optionally push) |
+| `/pod` | Manage RunPod GPU pods (create, status, cost, terminate) |
+
 ## Custom Agents
 
 Four domain-expert agents in `.claude/agents/`:
 - **training-expert** — IMPALA architecture, training dynamics, performance
 - **genesis-expert** — Genesis physics engine, BatchRenderer, batched simulation
 - **maze-expert** — Memory Maze environment, dm_control/MuJoCo stack, gym API
-- **runpod-manager** — GPU pod lifecycle: create, monitor, cost tracking, spot instances. **Always use this agent for cloud GPU setup** — it gathers requirements (credentials, intent, testing preference) before creating pods.
+- **runpod-manager** — GPU pod lifecycle: create, monitor, cost tracking, spot instances
