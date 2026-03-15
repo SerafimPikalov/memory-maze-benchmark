@@ -138,8 +138,7 @@ See `python runpod/pod_manager.py --help` for all commands.
 │   ├── physics_timestep_optimization.md
 │   ├── engine_comparison.md
 │   └── genesis_training_report.md
-├── tests/                   # Smoke tests
-└── results/                 # Training curves and comparison data
+└── tests/                   # Smoke tests
 ```
 
 ## Related

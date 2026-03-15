@@ -3,3 +3,4 @@ numpy>=1.24
 gym>=0.21,<1.0
 dm_control>=1.0
 wandb
+memory-maze @ git+https://github.com/SerafimPikalov/memory-maze.git@genesis

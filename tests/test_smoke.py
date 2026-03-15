@@ -4,8 +4,7 @@ import pytest
 
 
 def test_import_memory_maze():
-    import memory_maze
-    assert hasattr(memory_maze, '__version__') or True  # package loads
+    import memory_maze  # verifies package loads without error
 
 
 def test_import_train_impala():

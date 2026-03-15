@@ -14,7 +14,6 @@ help:  ## Show available targets
 
 install:  ## Install core training dependencies
 	pip install -r requirements.txt
-	pip install "memory-maze[genesis] @ git+https://github.com/SerafimPikalov/memory-maze.git@genesis"
 
 install-notebooks:  ## Install notebook dependencies
 	pip install -r requirements-notebooks.txt
