@@ -60,7 +60,7 @@ python train_impala.py --mode test --xpid <experiment_id>
 
 | File | Description |
 |------|-------------|
-| `train_impala.py` | IMPALA V-trace training (3 regimes: MuJoCo, Genesis single, Genesis batched) |
+| `train_impala.py` | IMPALA V-trace training (4 regimes: MuJoCo, Genesis single, Genesis batched 1-proc, Genesis batched N-proc) |
 | `benchmark_physics.py` | MuJoCo physics preset benchmark (timestep, iterations) |
 | `benchmark_backends.py` | MuJoCo vs Genesis comparison (SPS at different parallelism levels) |
 | `ARCHITECTURE.md` | Process/thread diagrams |

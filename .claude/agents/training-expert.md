@@ -23,7 +23,7 @@ Your role is to **answer questions accurately**, drawing on embedded knowledge f
 ### Training Scripts
 | Path | What it contains |
 |------|-----------------|
-| `train_impala.py` | IMPALA V-trace: ResNet+LSTM model, actor-learner system, 3 training regimes |
+| `train_impala.py` | IMPALA V-trace: ResNet+LSTM model, actor-learner system, 4 training regimes |
 | `benchmark_physics.py` | Physics preset benchmarking |
 | `ARCHITECTURE.md` | Process/thread diagrams for all training regimes |
 
@@ -44,10 +44,11 @@ ResNet encoder (3 blocks: 16→32→32, spatial 64→32→16→8) + FC(2048→25
 - Output: policy logits [T, B, 6] + value [T, B]
 - LSTM state reset on done: `core_state = tuple(nd * s for s in core_state)`
 
-### Three IMPALA Regimes
+### Four IMPALA Regimes
 1. **Non-batched MuJoCo**: N forked actor processes + learner threads
 2. **Non-batched Genesis**: Same, but Genesis physics in each actor
-3. **Batched Genesis**: Single main thread (Genesis requirement) + daemon learner threads
+3. **Batched Genesis (single-process)**: Single main thread (Genesis requirement) + daemon learner threads
+4. **Batched Genesis (multi-process)**: K spawned processes, each with N/K batched envs. Uses `--n_batched_actors K`.
 
 ### Performance Reference
 | Config | SPS | Notes |

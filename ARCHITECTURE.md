@@ -1,7 +1,7 @@
 # ARCHITECTURE.md — IMPALA Training on Memory Maze
 
 This document describes the process/thread layout, data flow, and engine separation
-in `train_impala.py`. Three training regimes are supported.
+in `train_impala.py` (1559 lines). Four training regimes are supported.
 
 ---
 
@@ -47,7 +47,7 @@ Training code is completely engine-agnostic — the env is selected by string ID
 
 Command: `python train_impala.py --backend genesis --num_actors 8`
 
-### Regime 3: Batched Genesis
+### Regime 3: Batched Genesis (single-process)
 
 ```
  ┌──────────────────────────────────────────────────────────────┐
@@ -81,18 +81,69 @@ Command: `python train_impala.py --backend genesis --batched --num_actors 8`
 
 Genesis/Taichi requires `gs.init()` + scene build + EGL rendering all on the main
 thread (FieldsBuilder is global state), so the batched actor runs on main and
-learners run as daemon threads.
+learners run as daemon threads. `gs.init()` is called at line 1452 in `train()`,
+after PyTorch optimizer setup (to avoid corrupting setuptools/distutils imports
+that Triton needs).
+
+### Regime 4: Multi-process Batched Genesis
+
+```
+ ┌──────────────────────────────────────────────────────────────┐
+ │  Main Process (PID 0)                                       │
+ │                                                             │
+ │   model.share_memory_()        ┌──────────────────────┐    │
+ │   buffers.share_memory_()      │ batch_and_learn       │    │
+ │          │                     │  thread 0 (daemon=T)  │    │
+ │          │     free_queue ←──→ │  get_batch()          │    │
+ │          │     full_queue ←──→ │  learn()              │    │
+ │          │                     └──────────────────────┘    │
+ │          │                     ┌──────────────────────┐    │
+ │          │                     │ batch_and_learn       │    │
+ │          │                     │  thread 1             │    │
+ │          │                     └──────────────────────┘    │
+ │          │                                                  │
+ │   monitor_loop_multi() ← runs on main thread               │
+ │     (includes dead actor detection)                         │
+ └──────┬───────┬───────┬──────────────────────────────────────┘
+        │       │       │    mp.SimpleQueue (spawn context IPC)
+ ┌──────┴──┐ ┌──┴───┐ ┌─┴─────┐
+ │ Actor 0 │ │ A. 1 │ │ A. K  │   K spawned processes
+ │ (proc)  │ │      │ │       │   mp.get_context("spawn")
+ │         │ │      │ │       │
+ │ gs.init │ │      │ │       │   Each process independently:
+ │ act_    │ │      │ │       │   - calls gs.init() in
+ │ batched │ │      │ │       │     BatchGenesisMemoryMazeEnv
+ │ M envs  │ │      │ │       │   - builds its own Genesis scene
+ │         │ │      │ │       │   - runs act_batched() with M envs
+ └─────────┘ └──────┘ └───────┘   - fills M buffer slots per unroll
+                                  Total envs = K × M = num_actors
+```
+
+Command: `python train_impala.py --backend genesis --batched --n_batched_actors 4 --num_actors 128`
+
+This splits `num_actors` environments across K separate OS processes, each running
+its own Genesis scene with M = num_actors / K environments. Unlike Regime 3, the
+parent process does NOT call `gs.init()` — each child initializes Genesis
+independently. This avoids the Taichi global-state limitation (one scene per
+process) while still using batched physics/rendering within each process.
+
+Key differences from Regime 3:
+- Uses `mp.get_context("spawn")` for clean Taichi/CUDA state in children
+- Each child sets `QD_OFFLINE_CACHE_FILE_PATH` to avoid kernel compilation races
+- `monitor_loop_multi()` includes dead actor detection and per-actor SPS tracking
+- `step_counter` is `mp.Value("i")` (cross-process) instead of a plain list
+- `num_actors` must be evenly divisible by `n_batched_actors`
 
 ### CPU vs GPU Summary
 
-| Component           | Regime 1 (MuJoCo)       | Regime 2 (Genesis unbatched) | Regime 3 (Genesis batched)  |
-|---------------------|-------------------------|------------------------------|-----------------------------|
-| Physics             | CPU (MuJoCo C)          | CPU (Genesis/Taichi)         | CPU or GPU (Taichi kernel)  |
-| Rendering           | CPU (GLFW/OSMesa)       | CPU (Rasterizer)             | GPU via gs_madrona BatchRenderer (built from source with clamp fix) |
-| Model inference     | CPU (actor processes)   | CPU (actor processes)        | GPU if CUDA available       |
-| Learner backward    | GPU if CUDA, else CPU   | GPU if CUDA, else CPU        | GPU if CUDA, else CPU       |
-| IPC mechanism       | mp.SimpleQueue (OS)     | mp.SimpleQueue (OS)          | queue.SimpleQueue (thread)  |
-| Parallelism         | N processes             | N processes                  | 1 process, threads          |
+| Component           | Regime 1 (MuJoCo)       | Regime 2 (Genesis unbatched) | Regime 3 (Genesis batched 1-proc) | Regime 4 (Genesis batched N-proc)  |
+|---------------------|-------------------------|------------------------------|-----------------------------------|------------------------------------|
+| Physics             | CPU (MuJoCo C)          | CPU (Genesis/Taichi)         | CPU or GPU (Taichi kernel)        | CPU or GPU (Taichi kernel)         |
+| Rendering           | CPU (GLFW/OSMesa)       | CPU (Rasterizer)             | GPU (BatchRenderer)               | GPU (BatchRenderer per process)    |
+| Model inference     | CPU (actor processes)   | CPU (actor processes)        | GPU if CUDA available             | GPU if CUDA (shared-memory model)  |
+| Learner backward    | GPU if CUDA, else CPU   | GPU if CUDA, else CPU        | GPU if CUDA, else CPU             | GPU if CUDA, else CPU              |
+| IPC mechanism       | mp.SimpleQueue (OS)     | mp.SimpleQueue (OS)          | queue.SimpleQueue (thread)        | mp.SimpleQueue (spawn context)     |
+| Parallelism         | N processes             | N processes                  | 1 process, threads                | K processes + threads              |
 
 ---
 
@@ -116,7 +167,7 @@ learners run as daemon threads.
  │  │                                                       │  │
  │  │  ┌─────────────────────────────────────────────────┐  │  │
  │  │  │ MemoryMazeWrapper (gym.Wrapper)                 │  │  │
- │  │  │   train_impala.py:195-215                       │  │  │
+ │  │  │   train_impala.py:195                           │  │  │
  │  │  │                                                 │  │  │
  │  │  │   HWC (64,64,3) uint8 → CHW (3,64,64) uint8    │  │  │
  │  │  │                                                 │  │  │
@@ -137,7 +188,7 @@ learners run as daemon threads.
  └─────────────────────────────────────────────────────────────┘
 ```
 
-### Wrapper Stack (Batched)
+### Wrapper Stack (Batched — Regimes 3 & 4)
 
 ```
  ┌─────────────────────────────────────────────────────────────┐
@@ -148,7 +199,7 @@ learners run as daemon threads.
  │                                                             │
  │  ┌───────────────────────────────────────────────────────┐  │
  │  │ BatchGenesisMemoryMazeEnv                             │  │
- │  │   genesis_backend.py:1074                             │  │
+ │  │   genesis_backend.py                                  │  │
  │  │                                                       │  │
  │  │   NOT a gym.Env — custom vectorized interface         │  │
  │  │                                                       │  │
@@ -242,7 +293,28 @@ After `get_batch()` stacks B slots: each tensor becomes `(T+1, B, ...)`.
 
 ---
 
-## 3. Engine Separation
+## 3. Network Architecture
+
+`MemoryMazeNet` (line 321) — IMPALA-style ResNet + LSTM:
+
+```
+RGB (3,64,64)
+  → ConvBlock(3→16)   64→32 spatial
+  → ConvBlock(16→32)  32→16 spatial
+  → ConvBlock(32→32)  16→8 spatial
+  → ReLU → Flatten (32×8×8 = 2048)
+  → FC(2048→256) → ReLU
+  → concat(features[256], one_hot_action[6], reward[1]) = 263
+  → LSTM(263→256, 1 layer)
+  → policy head: Linear(256→6)   [6 discrete actions]
+  → value head:  Linear(256→1)
+```
+
+Each `ConvBlock`: Conv3x3 → MaxPool(3, stride=2) → 2× ResBlock(ReLU→Conv3x3→ReLU→Conv3x3 + skip).
+
+---
+
+## 4. Engine Separation
 
 ### Unbatched (Regimes 1 & 2): Clean separation
 
@@ -260,18 +332,22 @@ train_impala.py
 Training code never imports MuJoCo or Genesis. Engine selection is purely by
 gym registration ID. `act()`, `get_batch()`, `learn()` are all engine-agnostic.
 
-### Batched (Regime 3): Engine leaks into training code
+### Batched (Regimes 3 & 4): Engine leaks into training code
 
 The batched path breaks the clean separation. `train_impala.py` directly imports
-Genesis in two places:
+Genesis in several places:
 
-1. **`act_batched()` line 523**: `from memory_maze.genesis_backend import BatchGenesisMemoryMazeEnv`
-2. **`train()` lines 1070-1078**: `import genesis as gs` + `gs.init()` on main thread
+1. **`act_batched()` line 634**: `from memory_maze.genesis_backend import BatchGenesisMemoryMazeEnv`
+2. **Regime 3 — `train()` line 1443**: `import genesis as gs` + `gs.init()` on main thread
+3. **Regime 4 — `train()` lines 1306-1331**: parent spawns child processes; each child calls
+   `gs.init()` inside `BatchGenesisMemoryMazeEnv.__init__()`. Parent does NOT call `gs.init()`.
+4. **`test()` line 1510**: `import genesis as gs` + `gs.init()` for evaluation
 
 This is because:
 - `BatchGenesisMemoryMazeEnv` is not a `gym.Env` — it has a custom vectorized API
 - Genesis requires `gs.init()` before scene construction, and this must happen on
-  the main thread after PyTorch optimizer setup
+  the main thread after PyTorch optimizer setup (Regime 3) or independently per
+  child process (Regime 4)
 
 A future task would abstract the batched path behind a `gym.vector.VectorEnv`-like
-interface so training code stays engine-agnostic for all three regimes.
+interface so training code stays engine-agnostic for all regimes.
