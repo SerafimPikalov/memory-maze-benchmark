@@ -89,12 +89,8 @@ WORKDIR /app
 # Training and benchmark scripts
 COPY train_impala.py train_dreamer.py benchmark_physics.py ./
 
-# TorchBeast pure-Python core modules (loaded via importlib, not pip)
-COPY torchbeast/torchbeast/core/vtrace.py \
-     torchbeast/torchbeast/core/environment.py \
-     torchbeast/torchbeast/core/file_writer.py \
-     torchbeast/torchbeast/core/prof.py \
-     torchbeast/torchbeast/core/
+# TorchBeast pure-Python core modules (vendored as proper package)
+COPY torchbeast/ torchbeast/
 
 # Example notebooks
 COPY notebooks/ notebooks/
@@ -102,9 +98,8 @@ COPY notebooks/ notebooks/
 # Docker support scripts
 COPY docker/smoke_test.py docker/run_training.sh ./
 
-# Memory Maze (editable install for both MuJoCo and Genesis backends)
-COPY memory-maze/ memory-maze/
-RUN pip install --no-cache-dir -e memory-maze/
+# Memory Maze with Genesis backend (from fork)
+RUN pip install --no-cache-dir "memory-maze[genesis] @ git+https://github.com/SerafimPikalov/memory-maze.git@genesis"
 
 # -- Genesis environment ------------------------------------------------
 # Skip Tk init (no display in headless)
