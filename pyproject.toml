@@ -33,3 +33,15 @@ dev = ["pytest", "ruff"]
 [build-system]
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "genesis: marks tests requiring the Genesis backend",
+    "gpu: marks tests requiring a CUDA GPU",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning:pydantic.*",
+    "ignore::DeprecationWarning:gym.*",
+]

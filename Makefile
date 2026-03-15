@@ -18,13 +18,16 @@ install:  ## Install core training dependencies
 install-notebooks:  ## Install notebook dependencies
 	pip install -r requirements-notebooks.txt
 
-test:  ## Run all tests (no GPU needed)
-	pytest tests/ -v
+install-dev:  ## Install dev dependencies (pytest, ruff)
+	pip install pytest ruff
 
-test-fast:  ## Run fast tests only (skip slow training tests)
-	pytest tests/ -v -m "not slow"
+test:  ## Run tests (skip slow integration tests)
+	python -m pytest tests/ -m "not slow" -v
 
-train-smoke-impala:  ## Short IMPALA training run (~2 min)
+test-all:  ## Run all tests including slow integration
+	python -m pytest tests/ -v
+
+train-smoke:  ## Short IMPALA training run (~2 min)
 	python train_impala.py --num_actors 2 --total_steps 1000 --batch_size 2
 
 train:  ## Train IMPALA on 9x9 maze (default settings)
@@ -41,6 +44,6 @@ lint:  ## Check code style
 	ruff format --check .
 
 clean:  ## Remove generated artifacts
-	rm -rf logs/ checkpoints/ recordings/ __pycache__/ wandb/
+	rm -rf logs/ checkpoints/ recordings/ __pycache__/ wandb/ .pytest_cache/
 
-.PHONY: help install install-notebooks test test-fast train-smoke-impala train train-genesis benchmark lint clean
+.PHONY: help install install-notebooks install-dev test test-all train-smoke train train-genesis benchmark lint clean
