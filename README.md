@@ -6,7 +6,7 @@ Training and benchmarking RL agents on [Memory Maze](https://arxiv.org/abs/2210.
 
 - **Physics is the bottleneck** (74-89% of step time), not rendering (~3ms regardless of backend)
 - **Genesis `dt=0.05` gives 10x physics speedup** (460ms -> 49ms per step) with stable walker dynamics
-- **IMPALA + LSTM** achieves mean return 9-12 at 23M steps (vs paper's 17-18)
+- **IMPALA + LSTM** achieves mean return 9-12 at 23M steps (paper reports ~17-18 at same step count)
 - **IMPALA (V-trace) training** with four regimes: MuJoCo, Genesis single-env, Genesis batched (single-process), and Genesis batched (multi-process)
 
 See [docs/bottleneck_analysis.md](docs/bottleneck_analysis.md) and [docs/physics_timestep_optimization.md](docs/physics_timestep_optimization.md) for the full data.
@@ -150,7 +150,7 @@ See `python runpod/pod_manager.py --help` for all commands.
 ## Known Limitations
 
 - **Lighting model differs**: MuJoCo uses a camera-following headlight; Genesis uses fixed directional lights with high ambient. This affects visual appearance but training still converges.
-- **Training results gap**: Our best Genesis IMPALA run reached mean return 9-12 at 23M steps (MuJoCo backend, default hyperparameters) vs the paper's 17-18 at 100M steps. The gap is expected — we trained for fewer steps and used a single seed. The paper's results required 100M+ steps with tuned hyperparameters.
+- **Training results gap**: Our best IMPALA run reached mean return 9-12 at 23M steps vs the paper's ~17-18 at the same step count (Fig A.1). The gap is likely due to single seed, default hyperparameters, and visual differences between Genesis and MuJoCo rendering. The paper used tuned hyperparameters across multiple seeds.
 - **Genesis/Taichi GPU memory**: Genesis does not fully free GPU memory when environments are destroyed. Long sessions with many env create/destroy cycles may require a process restart.
 - **gs-madrona source build**: The BatchRenderer requires `gs-madrona` built from source with a uint8 clamp fix. The stock PyPI package has a color corruption bug.
 
