@@ -39,7 +39,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 
 REGISTRY_PATH = Path(__file__).parent / "pod_registry.json"
-DOCKER_IMAGE = os.environ.get("DOCKER_IMAGE", "your-dockerhub-user/memorymaze-train:latest")
+DOCKER_IMAGE = os.environ.get("DOCKER_IMAGE", "serapikalov/memorymaze-train:latest")
 VOLUME_MOUNT = "/workspace"
 
 # GPU preference order: Workstation/professional GPUs first (better driver stack),
