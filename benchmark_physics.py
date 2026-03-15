@@ -13,7 +13,11 @@ import argparse
 import os
 import time
 
-os.environ.setdefault("MUJOCO_GL", "glfw")
+import sys
+if sys.platform == "darwin":
+    os.environ.setdefault("MUJOCO_GL", "glfw")
+else:
+    os.environ.setdefault("MUJOCO_GL", "egl")
 
 import gym
 import numpy as np
