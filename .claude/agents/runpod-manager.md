@@ -124,16 +124,25 @@ The image `serapikalov/memorymaze-train:latest` contains everything pre-installe
 ```
 /app/
 ├── train_impala.py          # IMPALA training script
-├── benchmark_physics.py     # Physics benchmark
-├── smoke_test.py            # GPU/EGL/backend validation (copied from docker/)
+├── benchmark_physics.py     # MuJoCo physics preset benchmark
+├── benchmark_backends.py    # MuJoCo vs Genesis comparison
+├── smoke_test.py            # GPU/EGL/Vulkan/backend validation
 ├── run_training.sh          # Training launcher (reads env vars)
+├── Makefile                 # make test, make train, etc.
+├── pyproject.toml           # pytest config
+├── tests/                   # test suite (make test)
 ├── torchbeast/              # Vendored V-trace modules
 └── notebooks/               # 5 Jupyter notebooks
 ```
 
+**CRITICAL PATH NOTE: All scripts are in `/app/`, NOT in `/app/docker/`.**
+The Dockerfile copies `docker/smoke_test.py` and `docker/run_training.sh` to `/app/` (the WORKDIR).
+- `python /app/smoke_test.py` — correct
+- `bash /app/run_training.sh` — correct
+- `/app/docker/run_training.sh` — WRONG, does not exist
+
 **Key behaviors:**
-- `CMD` is `bash` (interactive shell). On RunPod, `/start.sh` takes over (SSH + Jupyter). Training must be started explicitly.
-- `smoke_test.py` is at `/app/smoke_test.py` (NOT `/app/runpod/smoke_test.py`)
+- `CMD` is `/start.sh` (RunPod entrypoint: SSH + Jupyter). Training must be started explicitly.
 - Jupyter runs on port 8888 (password: value of `JUPYTER_PASSWORD` env var, default `memorymaze`)
 - `MUJOCO_GL=egl` is pre-set (headless GPU rendering)
 - Genesis JIT compilation takes 2-5 min on first run
