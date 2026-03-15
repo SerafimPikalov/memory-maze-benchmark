@@ -2,7 +2,7 @@
 
 ## Project
 
-Memory Maze benchmark — training and evaluating RL agents (IMPALA, DreamerV2) on the Memory Maze 3D navigation task with MuJoCo and Genesis physics backends.
+Memory Maze benchmark — training and evaluating RL agents (IMPALA, DreamerV2) on the Memory Maze 3D navigation task with MuJoCo and Genesis physics backends. Includes 6 guided Jupyter notebooks, one-command RunPod GPU deployment, and 4 custom Claude Code AI agents for domain-specific assistance.
 
 ## Build & Run
 
