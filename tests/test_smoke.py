@@ -12,11 +12,6 @@ def test_import_train_impala():
     assert MemoryMazeNet is not None
 
 
-def test_import_train_dreamer():
-    from train_dreamer import DreamerModel
-    assert DreamerModel is not None
-
-
 def test_import_torchbeast():
     from torchbeast.core import vtrace
     from torchbeast.core import environment

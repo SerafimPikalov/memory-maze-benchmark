@@ -2,12 +2,11 @@
 # Run Memory Maze training -- reads configuration from environment variables.
 #
 # Env vars:
-#   AGENT       -- impala | dreamer (default: impala)
+#   AGENT       -- impala (default: impala)
 #   BACKEND     -- mujoco | genesis (default: mujoco)
 #   MAZE_SIZE   -- 9x9 | 11x11 | 13x13 | 15x15 (default: 9x9)
 #   TOTAL_STEPS -- override total_steps (default: 100000000)
 #   NUM_ACTORS  -- IMPALA actors (default: 32)
-#   NUM_ENVS    -- DreamerV2 envs (default: 8)
 #   SEED        -- reproducibility seed (default: none)
 #   WANDB_API_KEY -- W&B API key (enables --wandb automatically)
 #   WANDB_PROJECT -- W&B project name (default: memorymaze)
@@ -16,8 +15,8 @@
 #   EXTRA_FLAGS -- additional flags passed to the training script
 #
 # Usage:
-#   AGENT=impala BACKEND=mujoco ./run_training.sh
-#   AGENT=dreamer BACKEND=genesis MAZE_SIZE=11x11 ./run_training.sh
+#   BACKEND=mujoco ./run_training.sh
+#   BACKEND=genesis MAZE_SIZE=11x11 ./run_training.sh
 
 set -euo pipefail
 
@@ -27,7 +26,6 @@ BACKEND="${BACKEND:-mujoco}"
 MAZE_SIZE="${MAZE_SIZE:-9x9}"
 TOTAL_STEPS="${TOTAL_STEPS:-100000000}"
 NUM_ACTORS="${NUM_ACTORS:-32}"
-NUM_ENVS="${NUM_ENVS:-8}"
 N_BATCHED_ACTORS="${N_BATCHED_ACTORS:-}"
 SEED="${SEED:-}"
 EXTRA_FLAGS="${EXTRA_FLAGS:-}"
@@ -53,8 +51,8 @@ echo "  Save dir:    ${SAVEDIR}"
 echo "============================================================"
 
 # Validate
-if [[ "$AGENT" != "impala" && "$AGENT" != "dreamer" ]]; then
-    echo "ERROR: AGENT must be 'impala' or 'dreamer', got '${AGENT}'"
+if [[ "$AGENT" != "impala" ]]; then
+    echo "ERROR: AGENT must be 'impala', got '${AGENT}'"
     exit 1
 fi
 
@@ -92,28 +90,16 @@ if [ -n "${N_BATCHED_ACTORS}" ]; then
 fi
 
 # Build command
-if [ "$AGENT" = "impala" ]; then
-    CMD="python ${APP_DIR}/train_impala.py \
-        --env ${ENV_ID} \
-        --backend ${BACKEND} \
-        --num_actors ${NUM_ACTORS} \
-        --total_steps ${TOTAL_STEPS} \
-        --savedir ${SAVEDIR} \
-        ${BATCHED_ACTOR_FLAGS} \
-        ${WANDB_FLAGS} \
-        ${SEED_FLAGS} \
-        ${EXTRA_FLAGS}"
-elif [ "$AGENT" = "dreamer" ]; then
-    CMD="python ${APP_DIR}/train_dreamer.py \
-        --env ${ENV_ID} \
-        --backend ${BACKEND} \
-        --num_envs ${NUM_ENVS} \
-        --total_steps ${TOTAL_STEPS} \
-        --savedir ${SAVEDIR} \
-        ${WANDB_FLAGS} \
-        ${SEED_FLAGS} \
-        ${EXTRA_FLAGS}"
-fi
+CMD="python ${APP_DIR}/train_impala.py \
+    --env ${ENV_ID} \
+    --backend ${BACKEND} \
+    --num_actors ${NUM_ACTORS} \
+    --total_steps ${TOTAL_STEPS} \
+    --savedir ${SAVEDIR} \
+    ${BATCHED_ACTOR_FLAGS} \
+    ${WANDB_FLAGS} \
+    ${SEED_FLAGS} \
+    ${EXTRA_FLAGS}"
 
 # Determine if xvfb-run is needed for headless rendering.
 # BatchRenderer (batched Genesis mode) uses Vulkan -- no X11 needed.

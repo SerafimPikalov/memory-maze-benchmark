@@ -11,7 +11,7 @@ from pathlib import Path
 
 import numpy as np
 
-# Default log directory (matches train_impala.py / train_dreamer.py)
+# Default log directory (matches train_impala.py)
 DEFAULT_LOGDIR = os.path.expanduser("~/logs/torchbeast")
 
 

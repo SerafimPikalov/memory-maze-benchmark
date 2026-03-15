@@ -1,7 +1,7 @@
 # Docker Deployment
 
-GPU Docker image for training Memory Maze agents. Supports all four training
-configurations: {IMPALA, DreamerV2} x {MuJoCo, Genesis}.
+GPU Docker image for training Memory Maze agents. Supports two training
+configurations: IMPALA x {MuJoCo, Genesis}.
 
 The image is based on `runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04`
 and includes headless EGL/Vulkan rendering, Genesis with the Madrona
@@ -35,13 +35,6 @@ Run training:
 ```bash
 # IMPALA on MuJoCo (default CMD)
 docker run --gpus all memorymaze-train
-
-# DreamerV2 on Genesis
-docker run --gpus all \
-    -e AGENT=dreamer \
-    -e BACKEND=genesis \
-    memorymaze-train \
-    python train_dreamer.py --backend genesis --num_envs 8 --total_steps 100000000
 
 # Interactive shell
 docker run --gpus all -it memorymaze-train bash
@@ -88,12 +81,11 @@ Set these in the template or at pod creation:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `AGENT` | `impala` | `impala` or `dreamer` |
+| `AGENT` | `impala` | `impala` |
 | `BACKEND` | `mujoco` | `mujoco` or `genesis` |
 | `MAZE_SIZE` | `9x9` | `9x9`, `11x11`, `13x13`, `15x15` |
 | `TOTAL_STEPS` | `100000000` | Total training steps |
 | `NUM_ACTORS` | `32` | IMPALA actor count |
-| `NUM_ENVS` | `8` | DreamerV2 environment count |
 | `N_BATCHED_ACTORS` | _(unset)_ | Batched actor processes (Genesis batched mode) |
 | `SEED` | _(unset)_ | Reproducibility seed |
 | `WANDB_API_KEY` | _(unset)_ | Enables W&B logging |

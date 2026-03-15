@@ -1,5 +1,5 @@
 # Memory Maze Training -- GPU Docker Image
-# Supports all 4 training configs: {IMPALA, DreamerV2} x {MuJoCo, Genesis}
+# Supports 2 training configs: IMPALA x {MuJoCo, Genesis}
 #
 # Build from the repository root (on Apple Silicon, must target amd64):
 #   docker build --platform linux/amd64 -f docker/Dockerfile -t memorymaze-train .
@@ -87,7 +87,7 @@ RUN GS_DIR=$(pip show gs-madrona 2>/dev/null | grep ^Location | cut -d' ' -f2)/g
 WORKDIR /app
 
 # Training and benchmark scripts
-COPY train_impala.py train_dreamer.py benchmark_physics.py ./
+COPY train_impala.py benchmark_physics.py ./
 
 # TorchBeast pure-Python core modules (vendored as proper package)
 COPY torchbeast/ torchbeast/

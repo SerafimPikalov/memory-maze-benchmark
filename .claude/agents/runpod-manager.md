@@ -37,7 +37,7 @@ When the user asks to "set up a pod", "create a pod", or "start training", you M
 
 ### Step 2: Understand intent (ask in one message, not multiple)
 Ask: **"What do you want to do on the pod?"**
-- **Train** — which algorithm (IMPALA or DreamerV2)? Which backend (MuJoCo or Genesis)? How many steps?
+- **Train** — which backend (MuJoCo or Genesis)? How many steps?
 - **Notebooks** — interactive Jupyter exploration (use `dev` workload, on-demand for SSH stability)
 - **Smoke test** — quick validation that everything works
 - **Dev** — interactive SSH development
@@ -54,7 +54,7 @@ Agent: I'll help set up a GPU pod. A few questions first:
 
 1. Do you have RUNPOD_API_KEY set?
 2. What do you want to do?
-   - Train (IMPALA/DreamerV2, which backend?)
+   - Train IMPALA (which backend?)
    - Explore with Jupyter notebooks
    - Quick smoke test
    - Interactive development
@@ -76,7 +76,7 @@ All operations use: `python runpod/pod_manager.py <subcommand>`
 |---------|---------|
 | `gpus` | List available GPUs with spot/on-demand pricing |
 | `recommend --workload <type>` | Show recommended config (no side effects) |
-| `create --workload <type> --agent <impala/dreamer> --backend <mujoco/genesis>` | Create pod |
+| `create --workload <type> --backend <mujoco/genesis>` | Create pod |
 | `list` | List tracked pods with live status |
 | `status [pod_id]` | Detailed status: uptime, GPU util, cost |
 | `stop <pod_id>` | Stop pod (preserves volume, stops compute billing) |

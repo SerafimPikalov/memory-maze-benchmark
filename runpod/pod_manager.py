@@ -872,7 +872,7 @@ def main():
     # create
     p_create = sub.add_parser("create", help="Create a pod")
     p_create.add_argument("--workload", required=True, choices=WORKLOAD_PROFILES.keys())
-    p_create.add_argument("--agent", choices=["impala", "dreamer"], default="impala")
+    p_create.add_argument("--agent", choices=["impala"], default="impala")
     p_create.add_argument("--backend", choices=["mujoco", "genesis"], default="mujoco")
     p_create.add_argument("--maze-size", default="9x9")
     p_create.add_argument("--total-steps", type=int)
