@@ -95,6 +95,32 @@ docker run --gpus all -it memory-maze-benchmark
 
 See [docker/README.md](docker/README.md) for RunPod and other cloud deployment instructions.
 
+## RunPod GPU Pods
+
+Spin up a GPU pod for training in one command:
+
+```bash
+pip install runpod
+export RUNPOD_API_KEY="your-key"
+
+# List available GPUs with pricing
+python runpod/pod_manager.py gpus
+
+# Create a pod for smoke testing
+python runpod/pod_manager.py create --workload smoke_test --backend genesis
+
+# Create a pod for full training (spot instance, cheapest GPU)
+python runpod/pod_manager.py create --workload long_train --agent impala --backend genesis
+
+# Monitor costs
+python runpod/pod_manager.py cost
+
+# Clean up when done
+python runpod/pod_manager.py terminate <pod_id>
+```
+
+See `python runpod/pod_manager.py --help` for all commands.
+
 ## Repository Structure
 
 ```
@@ -105,6 +131,7 @@ See [docker/README.md](docker/README.md) for RunPod and other cloud deployment i
 ├── ARCHITECTURE.md          # Process/thread diagrams
 ├── torchbeast/              # Vendored pure-Python V-trace modules (Apache 2.0)
 ├── notebooks/               # 6 guided Jupyter notebooks
+├── runpod/                  # GPU pod lifecycle manager (create, monitor, cost, cleanup)
 ├── docker/                  # GPU deployment (Dockerfile, smoke test, training launcher)
 ├── docs/                    # Research findings and analysis
 │   ├── bottleneck_analysis.md

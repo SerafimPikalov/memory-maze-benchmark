@@ -37,9 +37,21 @@ python train_impala.py --mode test --xpid <experiment_id>
 | `ARCHITECTURE.md` | Process/thread diagrams |
 | `torchbeast/` | Vendored TorchBeast modules (Apache 2.0) |
 
+## RunPod GPU Deployment
+
+```bash
+pip install runpod
+export RUNPOD_API_KEY="your-key"
+python runpod/pod_manager.py gpus                                          # list GPUs
+python runpod/pod_manager.py create --workload smoke_test --backend genesis # create pod
+python runpod/pod_manager.py list                                          # check status
+python runpod/pod_manager.py terminate <pod_id>                            # cleanup
+```
+
 ## Custom Agents
 
-Three domain-expert agents in `.claude/agents/`:
+Four domain-expert agents in `.claude/agents/`:
 - **training-expert** — IMPALA/DreamerV2 architecture, training dynamics, performance
 - **genesis-expert** — Genesis physics engine, BatchRenderer, batched simulation
 - **maze-expert** — Memory Maze environment, dm_control/MuJoCo stack, gym API
+- **runpod-manager** — GPU pod lifecycle: create, monitor, cost tracking, spot instances
