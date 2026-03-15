@@ -103,13 +103,34 @@ All operations use: `python runpod/pod_manager.py <subcommand>`
 | `long_train` | 32 | 62 GB | 50 GB | Yes | Full 100M step run (days) |
 | `dev` | 4 | 8 GB | 20 GB | No | Interactive development |
 
+## What's Inside the Docker Image
+
+The image `serapikalov/memorymaze-train:latest` contains everything pre-installed:
+
+```
+/app/
+├── train_impala.py          # IMPALA training script
+├── benchmark_physics.py     # Physics benchmark
+├── smoke_test.py            # GPU/EGL/backend validation (copied from docker/)
+├── run_training.sh          # Training launcher (reads env vars)
+├── torchbeast/              # Vendored V-trace modules
+└── notebooks/               # 5 Jupyter notebooks
+```
+
+**Key behaviors:**
+- `CMD` in Dockerfile starts IMPALA training automatically with default settings
+- `smoke_test.py` validates CUDA, EGL, MuJoCo, Genesis, and BatchRenderer
+- Jupyter runs on port 8888 (password: value of `JUPYTER_PASSWORD` env var, default `memorymaze`)
+- `MUJOCO_GL=egl` is pre-set (headless GPU rendering)
+- Genesis JIT compilation takes 2-5 min on first run
+
 ## Post-Creation Guidance
 
 After the pod is created and `pod_manager.py` prints the SSH info:
 
-- **Training**: "Pod is starting. Training begins automatically via the Docker CMD — no SSH needed. Wait 2-5 min for image pull, then check GPU utilization with `python runpod/pod_manager.py status <pod_id>`. If you set up W&B, check your dashboard for live metrics."
-- **Notebooks**: "Pod is starting. Wait 2-5 min, then open Jupyter at the URL shown on RunPod dashboard. Password is `memorymaze`. Start with notebook 01_environment_tour."
-- **Smoke test**: "Pod is starting. Wait 2-5 min, then SSH in with the command above and run: `python smoke_test.py`"
+- **Training**: "Pod is starting. Training begins automatically — no SSH needed. Wait 2-5 min for image pull + Genesis JIT, then check GPU utilization with `python runpod/pod_manager.py status <pod_id>`. If you set up W&B, check your dashboard for live metrics."
+- **Notebooks**: "Pod is starting. Wait 2-5 min, then open Jupyter at the RunPod dashboard URL. Password is `memorymaze`. Start with notebook 01_environment_tour."
+- **Smoke test**: "Pod is starting. Wait 2-5 min, then SSH in and run: `python /app/smoke_test.py`"
 
 Always remind about cleanup: "When done, terminate with: `python runpod/pod_manager.py terminate <pod_id>`"
 
@@ -117,8 +138,8 @@ Always remind about cleanup: "When done, terminate with: `python runpod/pod_mana
 
 1. **Creating** (0-30s) — API call, GPU allocated
 2. **Pulling image** (1-3 min) — Docker image download (~10 GB)
-3. **Starting** (30-60s) — Container init, EGL setup, Genesis JIT
-4. **Running** — Training active (Dockerfile CMD starts automatically)
+3. **Starting** (30-60s) — Container init, EGL setup
+4. **Running** — Training active (Dockerfile CMD starts IMPALA automatically)
 
 Do NOT try to SSH or check logs until step 4. Tell the user to wait.
 
@@ -131,7 +152,15 @@ python runpod/pod_manager.py status <id>  # specific pod
 python runpod/pod_manager.py cost         # spending
 ```
 
-If GPU utilization shows 0% after 10+ minutes, something may be wrong — suggest the user SSH in to check logs.
+If GPU utilization shows 0% after 10+ minutes, suggest the user SSH in and check:
+```bash
+# Check if training is running
+ps aux | grep train_impala
+# Check training logs
+ls /workspace/logs/torchbeast/
+# Run smoke test manually
+python /app/smoke_test.py
+```
 
 ## Cost Awareness
 
