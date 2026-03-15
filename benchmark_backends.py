@@ -2,14 +2,16 @@
 """Benchmark MuJoCo vs Genesis backends on Memory Maze.
 
 Measures steps/second for each backend at various parallelism levels,
-producing a comparison table. Useful for quantifying the Genesis speedup.
+matching real IMPALA training patterns:
+- MuJoCo / Genesis single-env: N forked processes, each stepping its own env
+- Genesis batched: single process, vectorized step over N envs on GPU
 
 Usage:
-    # Quick comparison (2 episodes each)
+    # Quick comparison
     python benchmark_backends.py
 
     # Thorough comparison
-    python benchmark_backends.py --episodes 5 --actors 1,2,4,8
+    python benchmark_backends.py --actors 1,2,4,8,16 --steps 8000
 
     # Genesis batched only (requires CUDA)
     python benchmark_backends.py --backends genesis-batched --actors 8,16,32
@@ -19,6 +21,7 @@ Usage:
 """
 
 import argparse
+import multiprocessing as mp
 import os
 import sys
 import time
@@ -35,97 +38,107 @@ os.environ["GENESIS_SKIP_TK_INIT"] = "1"
 import numpy as np
 
 
-def benchmark_mujoco(maze_size, num_actors, total_steps, seed=42):
-    """Benchmark MuJoCo backend with N sequential environments."""
+# ---------------------------------------------------------------------------
+# Worker for forked multiprocess benchmarks (MuJoCo / Genesis single-env)
+# ---------------------------------------------------------------------------
+
+def _worker(env_id, steps_per_worker, seed, result_queue, env_kwargs=None):
+    """Run in a forked process: create env, step, report results."""
+    if sys.platform != "darwin":
+        os.environ.setdefault("MUJOCO_GL", "egl")
+        os.environ.setdefault("PYOPENGL_PLATFORM", "egl")
+
     import gym
+    kwargs = {"disable_env_checker": True, "seed": seed}
+    if env_kwargs:
+        kwargs.update(env_kwargs)
 
-    envs = []
-    for i in range(num_actors):
-        env = gym.make(
-            f"memory_maze:MemoryMaze-{maze_size}-v0",
-            disable_env_checker=True,
-            seed=seed + i,
-        )
-        env.reset()
-        envs.append(env)
-
+    env = gym.make(env_id, **kwargs)
     rng = np.random.RandomState(seed)
+
+    env.reset()
     steps = 0
     total_reward = 0.0
 
     start = time.monotonic()
-    while steps < total_steps:
-        for env in envs:
-            action = rng.randint(env.action_space.n)
-            obs, reward, done, info = env.step(action)
-            total_reward += reward
-            steps += 1
-            if done:
-                env.reset()
-            if steps >= total_steps:
-                break
+    while steps < steps_per_worker:
+        action = rng.randint(env.action_space.n)
+        obs, reward, done, info = env.step(action)
+        total_reward += reward
+        steps += 1
+        if done:
+            env.reset()
     elapsed = time.monotonic() - start
 
-    for env in envs:
-        env.close()
+    env.close()
+    result_queue.put({"steps": steps, "reward": total_reward, "elapsed": elapsed})
+
+
+def benchmark_multiprocess(env_id, num_actors, total_steps, seed=42, env_kwargs=None):
+    """Benchmark with N forked processes (matches real IMPALA actor setup)."""
+    ctx = mp.get_context("fork" if sys.platform == "linux" else "spawn")
+    result_queue = ctx.Queue()
+    steps_per_worker = total_steps // num_actors
+
+    processes = []
+    for i in range(num_actors):
+        p = ctx.Process(
+            target=_worker,
+            args=(env_id, steps_per_worker, seed + i, result_queue, env_kwargs),
+        )
+        p.start()
+        processes.append(p)
+
+    # Wait for all workers
+    for p in processes:
+        p.join(timeout=300)
+
+    # Collect results
+    total_steps_done = 0
+    total_reward = 0.0
+    max_elapsed = 0.0
+    while not result_queue.empty():
+        r = result_queue.get_nowait()
+        total_steps_done += r["steps"]
+        total_reward += r["reward"]
+        max_elapsed = max(max_elapsed, r["elapsed"])
+
+    # SPS = total steps across all workers / wall-clock time of slowest worker
+    sps = total_steps_done / max_elapsed if max_elapsed > 0 else 0
 
     return {
-        "backend": "mujoco",
-        "num_envs": num_actors,
-        "total_steps": steps,
-        "elapsed_s": elapsed,
-        "sps": steps / elapsed,
-        "mean_reward_per_step": total_reward / steps,
+        "total_steps": total_steps_done,
+        "elapsed_s": max_elapsed,
+        "sps": sps,
+        "mean_reward_per_step": total_reward / total_steps_done if total_steps_done > 0 else 0,
     }
+
+
+# ---------------------------------------------------------------------------
+# Backend-specific benchmarks
+# ---------------------------------------------------------------------------
+
+def benchmark_mujoco(maze_size, num_actors, total_steps, seed=42):
+    """MuJoCo: N forked processes, each with its own MuJoCo env."""
+    env_id = f"memory_maze:MemoryMaze-{maze_size}-v0"
+    r = benchmark_multiprocess(env_id, num_actors, total_steps, seed)
+    r["backend"] = "mujoco"
+    r["num_envs"] = num_actors
+    return r
 
 
 def benchmark_genesis_single(maze_size, num_actors, total_steps, physics_timestep, seed=42):
-    """Benchmark Genesis single-env backend with N sequential environments."""
-    import gym
-
-    envs = []
-    for i in range(num_actors):
-        env = gym.make(
-            f"memory_maze:MemoryMaze-{maze_size}-Genesis-v0",
-            disable_env_checker=True,
-            seed=seed + i,
-            physics_timestep=physics_timestep,
-        )
-        env.reset()
-        envs.append(env)
-
-    rng = np.random.RandomState(seed)
-    steps = 0
-    total_reward = 0.0
-
-    start = time.monotonic()
-    while steps < total_steps:
-        for env in envs:
-            action = rng.randint(env.action_space.n)
-            obs, reward, done, info = env.step(action)
-            total_reward += reward
-            steps += 1
-            if done:
-                env.reset()
-            if steps >= total_steps:
-                break
-    elapsed = time.monotonic() - start
-
-    for env in envs:
-        env.close()
-
-    return {
-        "backend": "genesis",
-        "num_envs": num_actors,
-        "total_steps": steps,
-        "elapsed_s": elapsed,
-        "sps": steps / elapsed,
-        "mean_reward_per_step": total_reward / steps,
-    }
+    """Genesis single-env: N forked processes, each with its own Genesis env."""
+    env_id = f"memory_maze:MemoryMaze-{maze_size}-Genesis-v0"
+    env_kwargs = {"physics_timestep": physics_timestep}
+    r = benchmark_multiprocess(env_id, num_actors, total_steps, seed, env_kwargs)
+    r["backend"] = "genesis"
+    r["num_envs"] = num_actors
+    return r
 
 
 def benchmark_genesis_batched(maze_size, num_envs, total_steps, physics_timestep, seed=42):
-    """Benchmark Genesis batched backend (GPU physics + BatchRenderer)."""
+    """Genesis batched: single process, vectorized step over N envs on GPU."""
     import torch
     if not torch.cuda.is_available():
         return {
@@ -157,6 +170,10 @@ def benchmark_genesis_batched(maze_size, num_envs, total_steps, physics_timestep
     steps = 0
     total_reward = 0.0
 
+    # Warmup (Genesis JIT + BatchRenderer init)
+    for _ in range(5):
+        env.step(rng.randint(0, 6, size=num_envs))
+
     start = time.monotonic()
     while steps < total_steps:
         actions = rng.randint(0, 6, size=num_envs)
@@ -176,6 +193,10 @@ def benchmark_genesis_batched(maze_size, num_envs, total_steps, physics_timestep
         "mean_reward_per_step": total_reward / steps,
     }
 
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(
@@ -200,8 +221,11 @@ def main():
     print(f"Benchmark: {args.maze_size} maze, {args.steps} steps/run, seed={args.seed}")
     print(f"Backends: {backends}")
     print(f"Actor/env counts: {actor_counts}")
+    print()
+    print("Note: MuJoCo and Genesis single-env use N forked processes (like real IMPALA).")
+    print("      Genesis batched uses a single process with vectorized GPU step.")
     if "genesis" in backends or "genesis-batched" in backends:
-        print(f"Genesis physics_timestep: {args.physics_timestep}")
+        print(f"      Genesis physics_timestep: {args.physics_timestep}")
     print()
 
     results = []
@@ -238,11 +262,24 @@ def main():
     # Print comparison table
     print()
     print(f"{'Backend':<20} {'Envs':>5} {'Steps':>7} {'Time (s)':>9} {'SPS':>8} {'Notes'}")
-    print("-" * 65)
+    print("-" * 70)
     for r in results:
         notes = r.get("error", "")
         print(f"{r['backend']:<20} {r['num_envs']:>5} {r['total_steps']:>7} "
               f"{r['elapsed_s']:>9.2f} {r['sps']:>8.1f} {notes}")
+
+    # Print speedup summary if we have both mujoco and genesis-batched
+    mujoco_results = [r for r in results if r["backend"] == "mujoco" and r["sps"] > 0]
+    batched_results = [r for r in results if r["backend"] == "genesis-batched" and r["sps"] > 0]
+    if mujoco_results and batched_results:
+        print()
+        print("Speedup (Genesis batched vs MuJoCo at matching env count):")
+        for br in batched_results:
+            # Find MuJoCo result with same env count, or closest
+            mr = next((m for m in mujoco_results if m["num_envs"] == br["num_envs"]), None)
+            if mr:
+                speedup = br["sps"] / mr["sps"]
+                print(f"  n={br['num_envs']}: {br['sps']:.0f} vs {mr['sps']:.0f} SPS = {speedup:.1f}x")
 
 
 if __name__ == "__main__":
