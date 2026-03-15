@@ -266,7 +266,10 @@ def get_env_metadata(flags):
     # Fallback: create env in a subprocess to probe its spec.
     import multiprocessing
     def _probe(q, env_name):
-        os.environ.setdefault("MUJOCO_GL", "glfw")
+        if sys.platform == "darwin":
+            os.environ.setdefault("MUJOCO_GL", "glfw")
+        else:
+            os.environ.setdefault("MUJOCO_GL", "egl")
         _env = create_env(type("F", (), {"env": env_name})())
         q.put((_env.observation_space.shape, _env.action_space.n))
         _env.close()
@@ -1444,8 +1447,9 @@ def train(flags):
             except ImportError:
                 _batch_renderer_available = False
             if not gs._initialized:
-                backend = gs.cuda
-                gs.init(backend=backend, logging_level='warning')
+                if not torch.cuda.is_available():
+                    raise RuntimeError("Batched Genesis mode requires CUDA. No GPU detected.")
+                gs.init(backend=gs.cuda, logging_level='warning')
 
             # Monitor and learner run on background threads.
             monitor_thread = threading.Thread(

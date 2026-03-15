@@ -140,7 +140,11 @@ def main():
     results = {}
 
     # Always check CUDA and EGL
-    results["cuda"] = check_cuda()
+    try:
+        results["cuda"] = check_cuda()
+    except Exception as e:
+        print(f"FAIL: CUDA check crashed: {e}")
+        results["cuda"] = False
     results["egl"] = check_egl()
     results["batch_renderer"] = check_batch_renderer()
 
