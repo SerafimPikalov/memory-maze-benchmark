@@ -119,7 +119,7 @@ ENV MAZE_SIZE=9x9
 ENV WANDB_SILENT=true
 
 # Image version — agents check this to detect stale images.
-ENV MEMORYMAZE_IMAGE_VERSION=2
+ENV MEMORYMAZE_IMAGE_VERSION=3
 
 # /start.sh is the RunPod base image entrypoint (starts SSH + Jupyter).
 # For plain Docker: docker run --gpus all -it image bash
