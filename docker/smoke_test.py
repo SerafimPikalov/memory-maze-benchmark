@@ -64,8 +64,48 @@ def check_egl():
     return True
 
 
+def check_vulkan():
+    """Verify Vulkan ICD is present and points to a valid driver."""
+    print("=" * 60)
+    print("VULKAN CHECK (required for BatchRenderer)")
+    print("=" * 60)
+    icd_path = "/usr/share/vulkan/icd.d/nvidia_icd.json"
+    if not os.path.exists(icd_path):
+        print(f"  WARNING: {icd_path} not found")
+        print("  BatchRenderer will NOT work without Vulkan ICD")
+        print("FAIL: Vulkan ICD missing")
+        return False
+
+    # Check that the ICD points to a real library
+    try:
+        import json
+        with open(icd_path) as f:
+            icd = json.load(f)
+        lib = icd.get("ICD", {}).get("library_path", "")
+        print(f"  Vulkan ICD: {icd_path}")
+        print(f"  Library: {lib}")
+
+        # Check if the library actually exists
+        import ctypes
+        try:
+            ctypes.CDLL(lib)
+            print(f"  Library loads: OK")
+            print("PASS: Vulkan ICD valid")
+            return True
+        except OSError as e:
+            print(f"  WARNING: Cannot load {lib}: {e}")
+            print("  This host has broken Vulkan driver mounts.")
+            print("  BatchRenderer will NOT work. MuJoCo still works.")
+            print("FAIL: Vulkan driver broken")
+            return False
+    except Exception as e:
+        print(f"  WARNING: Cannot parse ICD: {e}")
+        print("FAIL: Vulkan ICD invalid")
+        return False
+
+
 def check_batch_renderer():
-    """Check if Madrona BatchRenderer is available for GPU rendering."""
+    """Check if Madrona BatchRenderer can import and render."""
     print("=" * 60)
     print("BATCH RENDERER CHECK")
     print("=" * 60)
@@ -146,6 +186,7 @@ def main():
         print(f"FAIL: CUDA check crashed: {e}")
         results["cuda"] = False
     results["egl"] = check_egl()
+    results["vulkan"] = check_vulkan()
     results["batch_renderer"] = check_batch_renderer()
 
     if args.backend in ("all", "mujoco"):
