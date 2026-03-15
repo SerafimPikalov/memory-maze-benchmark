@@ -150,7 +150,6 @@ See `python runpod/pod_manager.py --help` for all commands.
 ## Known Limitations
 
 - **Lighting model differs**: MuJoCo uses a camera-following headlight; Genesis uses fixed directional lights with high ambient. This affects visual appearance but training still converges.
-- **Hidden target selection**: Rarely, a target that was hidden underground can be selected as the active target, creating an unwinnable episode. This is a known edge case in the Genesis backend.
 - **Training results gap**: Our best Genesis IMPALA run reached mean return 9-12 at 23M steps (MuJoCo backend, default hyperparameters) vs the paper's 17-18 at 100M steps. The gap is expected — we trained for fewer steps and used a single seed. The paper's results required 100M+ steps with tuned hyperparameters.
 - **Genesis/Taichi GPU memory**: Genesis does not fully free GPU memory when environments are destroyed. Long sessions with many env create/destroy cycles may require a process restart.
 - **gs-madrona source build**: The BatchRenderer requires `gs-madrona` built from source with a uint8 clamp fix. The stock PyPI package has a color corruption bug.
