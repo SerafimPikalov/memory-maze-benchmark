@@ -8,23 +8,28 @@ Memory Maze benchmark — training and evaluating RL agents (IMPALA V-trace) on 
 
 When a user asks to "set up", "try this project", "get started", or "run tests", follow the path that matches their environment:
 
+### IMPORTANT: Always ask to run tests after setup
+
+After ANY setup path completes, ask the user: "Setup done. Want to run tests to verify everything works?" Then run the appropriate tests. This catches broken environments early.
+
 ### Path A: Local machine (no GPU)
 ```bash
 pip install -r requirements.txt
-make test-fast              # import checks + env creation + model forward pass (~10s)
-cd notebooks && jupyter lab # explore interactively
+make test              # smoke + environment + training unit tests (~30s)
+cd notebooks && jupyter lab  # explore interactively
 ```
+After install, ask: "Want to run `make test` to verify? Takes ~30s."
 
 ### Path B: Local machine with NVIDIA GPU (Docker)
 ```bash
 docker build -f docker/Dockerfile -t mmaze .
-docker run --gpus all mmaze python smoke_test.py     # validate CUDA, EGL, backends (~60s)
+docker run --gpus all mmaze python smoke_test.py     # validate CUDA, EGL, Vulkan, backends (~60s)
 docker run --gpus all -it mmaze                      # interactive shell
-docker run --gpus all -p 8888:8888 mmaze jupyter lab --ip=0.0.0.0 --allow-root --no-browser
 ```
+After build, ask: "Want to run the smoke test? It checks CUDA, EGL, Vulkan, and both backends (~60s)."
 
 ### Path C: Cloud GPU (RunPod)
-Use the **runpod-manager** agent — it will ask what the user wants to do, gather credentials, and create the pod. Invoke with: "set up a runpod" or "create a GPU pod".
+Use the **runpod-manager** agent — it will ask what the user wants to do, gather credentials, and create the pod. The agent will **always recommend running the smoke test** after pod creation. This is critical — some RunPod hosts have broken Vulkan drivers.
 
 ### Docker image rebuild
 The Docker Hub image may be stale. If bugs appear that are already fixed in the repo, rebuild:

@@ -144,13 +144,30 @@ echo $MEMORYMAZE_IMAGE_VERSION
 ```
 Current version: **3**. If missing or lower, the image is stale. Tell the user: "This pod is running an old Docker image (version X, current is 2). Rebuild with `./docker/deploy.sh` and push to your Docker Hub."
 
-## Post-Creation Guidance
+## Post-Creation: ALWAYS Run Smoke Test First
 
-After the pod is created and `pod_manager.py` prints the SSH info:
+After the pod is created and SSH is available, **ALWAYS ask the user** before doing anything else:
 
-- **Training**: "Pod is starting. Wait 2-5 min for image pull, then SSH in and run: `python /app/train_impala.py --backend genesis --batched --physics_timestep 0.05 --total_steps 10_000_000` (or use `/app/run_training.sh` which reads env vars). If you set up W&B, check your dashboard for live metrics."
-- **Notebooks**: "Pod is starting. Wait 2-5 min, then open Jupyter at the RunPod dashboard URL. Password is `memorymaze`. Start with notebook 01_environment_tour."
-- **Smoke test**: "Pod is starting. Wait 2-5 min, then SSH in and run: `python /app/smoke_test.py`"
+> "Pod is ready. Before we proceed, I recommend running the smoke test to verify CUDA, EGL, Vulkan, and both backends work. It takes ~60s and catches broken hosts early. Run it now?"
+
+If user says yes (or doesn't object), run:
+```bash
+ssh ... "python /app/smoke_test.py"
+```
+
+**Check the results carefully:**
+- If **Vulkan FAIL** → Genesis batched mode won't work. Tell the user: "This host has broken Vulkan drivers. Genesis batched mode won't work here. We can: (1) use MuJoCo instead, or (2) terminate and try a different host."
+- If **CUDA FAIL** → nothing GPU-related will work. Terminate immediately.
+- If **EGL FAIL** → MuJoCo rendering broken. Try `export MUJOCO_GL=egl` or terminate.
+- If **all PASS** → proceed with the user's intent.
+
+## Post-Smoke-Test Guidance
+
+After smoke test passes:
+
+- **Training**: "All checks passed. Starting training: `python /app/train_impala.py --backend genesis --batched --physics_timestep 0.05 --total_steps 10_000_000`"
+- **Notebooks**: "All checks passed. Open Jupyter at the RunPod dashboard URL. Password is `memorymaze`. Start with notebook 01_environment_tour."
+- **Dev**: "All checks passed. You can SSH in and explore."
 
 Always remind about cleanup: "When done, terminate with: `python runpod/pod_manager.py terminate <pod_id>`"
 
