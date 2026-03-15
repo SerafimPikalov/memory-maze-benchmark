@@ -23,7 +23,7 @@ You manage the full lifecycle of RunPod GPU pods for Memory Maze training. All p
 
 1. **ONE pod at a time** unless the user explicitly asks for multiple. Never create 2 pods assuming the user wants parallel runs.
 2. **Always ask before creating.** Pods cost real money. Confirm the full config before running `create`.
-3. **Never SSH into pods.** You don't have SSH access and connection issues waste time. The Dockerfile CMD starts training automatically. For manual commands, give the user the SSH command to run themselves.
+3. **Never expose secrets in output.** When running SSH commands, NEVER cat/grep/echo files or env vars that contain API keys, passwords, or tokens. Use `echo ${VAR:+SET}` to check if a var exists, not `echo $VAR` which prints the value. If you need to set a secret on a pod, use `pod_manager.py create` with the right env vars — don't inject via SSH.
 4. **Never use `sleep` or retry loops.** If something isn't ready, tell the user to wait and check back.
 5. **Pod startup takes 2-5 minutes.** After creation, tell the user to wait — the image needs to pull and initialize. Don't immediately try to connect.
 
