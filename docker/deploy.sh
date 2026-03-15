@@ -2,9 +2,11 @@
 # Build and push the Memory Maze training Docker image.
 #
 # Usage:
-#   ./docker/deploy.sh                                # build only (no DOCKER_REPO set)
+#   ./docker/deploy.sh                                # build + push (uses DOCKER_REPO)
 #   ./docker/deploy.sh --build-only                   # build without pushing
-#   DOCKER_REPO=myuser/myimage ./docker/deploy.sh     # build + push to your repo
+#   DOCKER_REPO=myuser/myimage ./docker/deploy.sh     # build + push to custom repo
+#
+# If DOCKER_REPO is not set, the script asks whether to push.
 
 set -euo pipefail
 
@@ -16,10 +18,23 @@ if [ "${1:-}" = "--build-only" ]; then
     BUILD_ONLY=1
 fi
 
+# Default Docker repo from pod_manager.py
+DEFAULT_REPO="serapikalov/memorymaze-train"
+
 if [ -z "${DOCKER_REPO:-}" ]; then
-    echo "DOCKER_REPO not set — building locally as 'memorymaze-train' (no push)."
-    DOCKER_REPO="memorymaze-train"
-    BUILD_ONLY=1
+    DOCKER_REPO="$DEFAULT_REPO"
+    if [ "$BUILD_ONLY" = "0" ]; then
+        echo "DOCKER_REPO not set. Default: ${DEFAULT_REPO}"
+        echo ""
+        echo "  1) Build and push to ${DEFAULT_REPO} (RunPod will use this)"
+        echo "  2) Build only (local image, RunPod won't see it)"
+        echo ""
+        read -p "Choice [1/2]: " choice
+        if [ "${choice:-2}" = "2" ]; then
+            BUILD_ONLY=1
+            DOCKER_REPO="memorymaze-train"
+        fi
+    fi
 fi
 
 TAG="${TAG:-latest}"
@@ -41,14 +56,22 @@ docker build \
     -t "$IMAGE" \
     .
 
+echo ""
 echo "Build complete: ${IMAGE}"
 
 if [ "$BUILD_ONLY" = "0" ]; then
     echo "Pushing ${IMAGE}..."
     docker push "$IMAGE"
-    echo "Push complete."
+    echo ""
+    echo "Push complete. RunPod pods will now use this image."
+else
+    echo ""
+    echo "NOTE: This image is LOCAL only."
+    echo "  - 'docker run --gpus all ${IMAGE}' works on this machine"
+    echo "  - RunPod pods still pull from Docker Hub (may be stale)"
+    echo ""
+    echo "To push for RunPod:"
+    echo "  DOCKER_REPO=${DEFAULT_REPO} ./docker/deploy.sh"
 fi
 
-echo "============================================================"
-echo "Done. Image: ${IMAGE}"
 echo "============================================================"
