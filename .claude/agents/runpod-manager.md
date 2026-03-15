@@ -133,10 +133,19 @@ The image `serapikalov/memorymaze-train:latest` contains everything pre-installe
 
 **Key behaviors:**
 - `CMD` is `bash` (interactive shell). On RunPod, `/start.sh` takes over (SSH + Jupyter). Training must be started explicitly.
-- `smoke_test.py` validates CUDA, EGL, MuJoCo, Genesis, and BatchRenderer
+- `smoke_test.py` is at `/app/smoke_test.py` (NOT `/app/runpod/smoke_test.py`)
 - Jupyter runs on port 8888 (password: value of `JUPYTER_PASSWORD` env var, default `memorymaze`)
 - `MUJOCO_GL=egl` is pre-set (headless GPU rendering)
 - Genesis JIT compilation takes 2-5 min on first run
+
+**Stale image detection:** If you SSH into a pod and see ANY of these files, the image is OLD and needs rebuilding:
+- `eval_batched.py` — removed in DreamerV2 cleanup
+- `evaluate_agent.py` — removed
+- `benchmark_profiling.py` — removed
+- `train_dreamer.py` — removed
+- `runpod/smoke_test.py` — moved to `/app/smoke_test.py`
+
+If stale, tell the user: "This pod is running an old Docker image. Rebuild with `./docker/deploy.sh` and push, or set env vars manually: `export MUJOCO_GL=egl PYOPENGL_PLATFORM=egl`"
 
 ## Post-Creation Guidance
 
