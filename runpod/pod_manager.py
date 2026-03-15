@@ -325,7 +325,7 @@ def cmd_create(args):
         "BACKEND": backend,
         "MAZE_SIZE": args.maze_size or "9x9",
         "TOTAL_STEPS": str(args.total_steps) if args.total_steps else "100000000",
-        "AUTO_START": "1" if args.auto_start else "0",
+
         "JUPYTER_PASSWORD": os.environ.get("JUPYTER_PASSWORD", "memorymaze"),
     }
     # Pass through optional env vars
@@ -876,7 +876,6 @@ def main():
     p_create.add_argument("--backend", choices=["mujoco", "genesis"], default="mujoco")
     p_create.add_argument("--maze-size", default="9x9")
     p_create.add_argument("--total-steps", type=int)
-    p_create.add_argument("--auto-start", action="store_true")
     p_create.add_argument("--on-demand", action="store_true",
                           help="Force on-demand (non-spot) instance for SSH stability")
     p_create.add_argument("--spot", action="store_true",

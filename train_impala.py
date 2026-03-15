@@ -102,7 +102,7 @@ parser.add_argument("--use_batch_renderer", action="store_true",
 parser.add_argument("--disable_checkpoint", action="store_true",
                     help="Disable saving checkpoint.")
 parser.add_argument("--savedir",
-                    default="~/logs/torchbeast",
+                    default="/workspace/logs" if os.path.isdir("/workspace") else "~/logs/torchbeast",
                     help="Root dir where experiment data will be saved.")
 parser.add_argument("--num_actors", default=128, type=int,
                     help="Number of actors (default: 128, paper uses 128).")
