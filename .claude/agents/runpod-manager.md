@@ -118,7 +118,7 @@ The image `serapikalov/memorymaze-train:latest` contains everything pre-installe
 ```
 
 **Key behaviors:**
-- `CMD` in Dockerfile starts IMPALA training automatically with default settings
+- `CMD` is `bash` (interactive shell). On RunPod, `/start.sh` takes over (SSH + Jupyter). Training must be started explicitly.
 - `smoke_test.py` validates CUDA, EGL, MuJoCo, Genesis, and BatchRenderer
 - Jupyter runs on port 8888 (password: value of `JUPYTER_PASSWORD` env var, default `memorymaze`)
 - `MUJOCO_GL=egl` is pre-set (headless GPU rendering)
@@ -128,7 +128,7 @@ The image `serapikalov/memorymaze-train:latest` contains everything pre-installe
 
 After the pod is created and `pod_manager.py` prints the SSH info:
 
-- **Training**: "Pod is starting. Training begins automatically — no SSH needed. Wait 2-5 min for image pull + Genesis JIT, then check GPU utilization with `python runpod/pod_manager.py status <pod_id>`. If you set up W&B, check your dashboard for live metrics."
+- **Training**: "Pod is starting. Wait 2-5 min for image pull, then SSH in and run: `python /app/train_impala.py --backend genesis --batched --physics_timestep 0.05 --total_steps 10_000_000` (or use `/app/run_training.sh` which reads env vars). If you set up W&B, check your dashboard for live metrics."
 - **Notebooks**: "Pod is starting. Wait 2-5 min, then open Jupyter at the RunPod dashboard URL. Password is `memorymaze`. Start with notebook 01_environment_tour."
 - **Smoke test**: "Pod is starting. Wait 2-5 min, then SSH in and run: `python /app/smoke_test.py`"
 
@@ -139,7 +139,7 @@ Always remind about cleanup: "When done, terminate with: `python runpod/pod_mana
 1. **Creating** (0-30s) — API call, GPU allocated
 2. **Pulling image** (1-3 min) — Docker image download (~10 GB)
 3. **Starting** (30-60s) — Container init, EGL setup
-4. **Running** — Training active (Dockerfile CMD starts IMPALA automatically)
+4. **Running** — SSH + Jupyter available. Training must be started manually or via `run_training.sh`
 
 Do NOT try to SSH or check logs until step 4. Tell the user to wait.
 

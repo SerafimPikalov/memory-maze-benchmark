@@ -114,7 +114,6 @@ ENV BACKEND=mujoco
 ENV MAZE_SIZE=9x9
 ENV WANDB_SILENT=true
 
-# Default: train IMPALA on 9x9 maze for 10M steps.
-# On RunPod, this CMD is overridden by the template's start command.
-# For interactive use, override with: docker run ... bash
-CMD ["python", "train_impala.py", "--num_actors", "8", "--total_steps", "10000000"]
+# Interactive shell by default. On RunPod, /start.sh takes over (SSH + Jupyter).
+# To train: docker run --gpus all image python train_impala.py --num_actors 8
+CMD ["bash"]
