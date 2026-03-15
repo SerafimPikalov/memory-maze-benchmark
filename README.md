@@ -67,16 +67,31 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed process/thread diagrams of a
 | 4 | [Engine Comparison](notebooks/04_engine_comparison.ipynb) | MuJoCo vs Genesis side-by-side |
 | 5 | [Model Playground](notebooks/05_model_playground.ipynb) | Load trained model, inspect internals, visualize features |
 
-## Docker
+## Docker (GPU)
 
-GPU deployment image with CUDA, EGL, Genesis, and Madrona BatchRenderer pre-installed:
+Pre-built image with CUDA, EGL, Genesis, and Madrona BatchRenderer:
 
 ```bash
-docker build -f docker/Dockerfile -t memory-maze-benchmark .
-docker run --gpus all -it memory-maze-benchmark
+# Build
+docker build -f docker/Dockerfile -t mmaze .
+
+# Smoke test — validates CUDA, EGL, MuJoCo, Genesis (~60s)
+docker run --gpus all mmaze python smoke_test.py
+
+# Train IMPALA with MuJoCo (1M steps, ~30 min)
+docker run --gpus all mmaze python train_impala.py --num_actors 8 --total_steps 1_000_000
+
+# Train with Genesis batched mode (fastest)
+docker run --gpus all mmaze python train_impala.py --backend genesis --batched --physics_timestep 0.05
+
+# Interactive shell
+docker run --gpus all -it mmaze
+
+# Jupyter notebooks
+docker run --gpus all -p 8888:8888 mmaze jupyter lab --ip=0.0.0.0 --allow-root --no-browser
 ```
 
-See [docker/README.md](docker/README.md) for RunPod and other cloud deployment instructions.
+See [docker/README.md](docker/README.md) for cloud deployment (RunPod, Lambda, etc.).
 
 ## RunPod GPU Pods
 

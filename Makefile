@@ -18,9 +18,11 @@ install:  ## Install core training dependencies
 install-notebooks:  ## Install notebook dependencies
 	pip install -r requirements-notebooks.txt
 
-smoke-test:  ## Quick sanity check (no GPU needed)
-	python -c "import memory_maze; print('memory-maze OK')"
-	python -c "from train_impala import MemoryMazeNet; print('IMPALA model OK')"
+test:  ## Run all tests (no GPU needed)
+	pytest tests/ -v
+
+test-fast:  ## Run fast tests only (skip slow training tests)
+	pytest tests/ -v -m "not slow"
 
 train-smoke-impala:  ## Short IMPALA training run (~2 min)
 	python train_impala.py --num_actors 2 --total_steps 1000 --batch_size 2
@@ -41,4 +43,4 @@ lint:  ## Check code style
 clean:  ## Remove generated artifacts
 	rm -rf logs/ checkpoints/ recordings/ __pycache__/ wandb/
 
-.PHONY: help install install-notebooks smoke-test train-smoke-impala train train-genesis benchmark lint clean
+.PHONY: help install install-notebooks test test-fast train-smoke-impala train train-genesis benchmark lint clean
