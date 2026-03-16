@@ -46,6 +46,14 @@ VOLUME_MOUNT = "/workspace"
 # consumer GPUs (RTX 3090/4090) deprioritized — some hosts have incomplete NVIDIA
 # Vulkan/rendering library mounts (libGLX_nvidia.so.0, libEGL_nvidia.so.0 missing).
 GPU_PREFERENCE = [
+    "NVIDIA H100 PCIe",
+    "NVIDIA H100 80GB HBM3",
+    "NVIDIA H100 NVL",
+    "NVIDIA A100-SXM4-80GB",
+    "NVIDIA A100 80GB PCIe",
+    "NVIDIA L40S",
+    "NVIDIA RTX 6000 Ada Generation",
+    "NVIDIA RTX A6000",
     "NVIDIA RTX A5000",
     "NVIDIA RTX 4000 SFF Ada Generation",
     "NVIDIA RTX A4500",

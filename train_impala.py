@@ -1248,16 +1248,18 @@ def train(flags):
         if flags.disable_checkpoint:
             return
         logging.info("Saving checkpoint to %s", checkpointpath)
-        torch.save(
-            {
-                "model_state_dict": model.state_dict(),
-                "optimizer_state_dict": optimizer.state_dict(),
-                "scheduler_state_dict": scheduler.state_dict(),
-                "flags": vars(flags),
-                "step": step,
-            },
-            checkpointpath,
-        )
+        state = {
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "scheduler_state_dict": scheduler.state_dict(),
+            "flags": vars(flags),
+            "step": step,
+        }
+        torch.save(state, checkpointpath)
+        # Save timestamped copy for rollback (14 MB each).
+        ckpt_dir = os.path.dirname(checkpointpath)
+        numbered_path = os.path.join(ckpt_dir, f"model_step{step}.tar")
+        torch.save(state, numbered_path)
 
     # Handle SIGTERM for graceful shutdown on spot instance preemption.
     def _sigterm_handler(signum, frame):
